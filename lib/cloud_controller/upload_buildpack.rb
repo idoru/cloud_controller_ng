@@ -24,6 +24,8 @@ module VCAP::CloudController
 
       old_buildpack_key = nil
 
+      new_stack = determine_new_stack(buildpack, bits_file_path)
+
       begin
         Buildpack.db.transaction do
           buildpack.lock!
@@ -32,6 +34,7 @@ module VCAP::CloudController
             key: new_key,
             filename: new_filename,
             sha256_checksum: sha256,
+            stack: new_stack,
           )
         end
       rescue Sequel::Error
@@ -47,7 +50,30 @@ module VCAP::CloudController
       true
     end
 
+    def extract_stack_from_buildpack(bits_file_path)
+      bits_file_path = bits_file_path.path if bits_file_path.respond_to?(:path)
+      output, _, status = Open3.capture3('unzip', '-p', bits_file_path, 'manifest.yml')
+      YAML.safe_load(output).dig('stack') if status.success?
+    end
+
     private
+
+    def determine_new_stack(buildpack, bits_file_path)
+      extracted_stack = extract_stack_from_buildpack(bits_file_path)
+      if extracted_stack.to_s != '' && !Stack.where(name: extracted_stack).first
+        raise CloudController::Errors::ApiError.new_from_details('BuildpackStackDoesNotExist', extracted_stack)
+      end
+      new_stack = [extracted_stack, buildpack.stack, Stack.default.name].find { |s| s.to_s != '' && s.to_s != 'unknown' }
+      if buildpack.stack != 'unknown' && buildpack.stack != new_stack
+        raise CloudController::Errors::ApiError.new_from_details('BuildpackStacksDontMatch', new_stack, buildpack.stack)
+      end
+
+      if buildpack.stack != new_stack && Buildpack.find(name: buildpack.name, stack: new_stack)
+        raise CloudController::Errors::ApiError.new_from_details('BuildpackNameStackTaken', buildpack.name, new_stack)
+      end
+
+      new_stack
+    end
 
     def new_bits?(buildpack, key)
       buildpack.key != key

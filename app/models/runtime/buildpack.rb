@@ -2,11 +2,13 @@ module VCAP::CloudController
   class Buildpack < Sequel::Model
     plugin :list
 
-    export_attributes :name, :position, :enabled, :locked, :filename
-    import_attributes :name, :position, :enabled, :locked, :filename, :key
+    export_attributes :name, :stack, :position, :enabled, :locked, :filename
+    import_attributes :name, :stack, :position, :enabled, :locked, :filename, :key
 
-    def self.list_admin_buildpacks
-      exclude(key: nil).exclude(key: '').order(:position).all
+    def self.list_admin_buildpacks(stack_name=nil)
+      scoped = exclude(key: nil).exclude(key: '')
+      scoped = scoped.where(stack: stack_name) if stack_name
+      scoped.order(:position).all
     end
 
     def self.at_last_position
@@ -18,8 +20,9 @@ module VCAP::CloudController
     end
 
     def validate
-      validates_unique :name
+      validates_unique [:name, :stack]
       validates_format(/\A(\w|\-)+\z/, :name, message: 'name can only contain alphanumeric characters')
+      validates_presence :stack
     end
 
     def locked?
