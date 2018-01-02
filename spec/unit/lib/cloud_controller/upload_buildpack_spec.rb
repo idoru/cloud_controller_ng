@@ -3,7 +3,7 @@ require 'spec_helper'
 module VCAP::CloudController
   RSpec.describe UploadBuildpack do
     let(:buildpack_blobstore) { double(:buildpack_blobstore).as_null_object }
-    let!(:buildpack) { VCAP::CloudController::Buildpack.create_from_hash({ name: 'upload_binary_buildpack', position: 0 }) }
+    let!(:buildpack) { VCAP::CloudController::Buildpack.create_from_hash({ name: 'upload_binary_buildpack', stack: 'cflinuxfs2', position: 0 }) }
 
     let(:upload_buildpack) { UploadBuildpack.new(buildpack_blobstore) }
 
@@ -116,7 +116,7 @@ module VCAP::CloudController
         end
 
         context 'when the same bits are uploaded twice' do
-          let(:buildpack2) { VCAP::CloudController::Buildpack.create_from_hash({ name: 'buildpack2', position: 0 }) }
+          let(:buildpack2) { VCAP::CloudController::Buildpack.create_from_hash({ name: 'buildpack2', stack: 'cflinuxfs2', position: 0 }) }
 
           it 'should have different keys' do
             upload_buildpack.upload_buildpack(buildpack, valid_zip2, filename)

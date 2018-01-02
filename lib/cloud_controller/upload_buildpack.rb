@@ -24,6 +24,8 @@ module VCAP::CloudController
 
       old_buildpack_key = nil
 
+      new_stack = extract_stack_from_buildpack(bits_file_path) || Stack.default.name
+
       begin
         Buildpack.db.transaction do
           buildpack.lock!
@@ -32,6 +34,7 @@ module VCAP::CloudController
             key: new_key,
             filename: new_filename,
             sha256_checksum: sha256,
+            stack: new_stack,
           )
         end
       rescue Sequel::Error
@@ -55,6 +58,12 @@ module VCAP::CloudController
 
     def new_filename?(buildpack, filename)
       buildpack.filename != filename
+    end
+
+    def extract_stack_from_buildpack(bits_file_path)
+      bits_file_path = bits_file_path.path if bits_file_path.respond_to?(:path)
+      output, _, status = Open3.capture3('unzip', '-p', bits_file_path, 'manifest.yml')
+      YAML.load(output).dig('stack') if status.success?
     end
   end
 end

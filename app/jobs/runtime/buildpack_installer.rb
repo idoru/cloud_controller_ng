@@ -16,7 +16,7 @@ module VCAP::CloudController
 
           buildpack = Buildpack.find(name: name)
           if buildpack.nil?
-            buildpack = Buildpack.create(name: name)
+            buildpack = Buildpack.create(name: name, stack: '')
             created = true
           elsif buildpack.locked
             logger.info "Buildpack #{name} locked, not updated"

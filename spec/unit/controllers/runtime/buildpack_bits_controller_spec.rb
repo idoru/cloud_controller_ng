@@ -42,7 +42,7 @@ module VCAP::CloudController
     after { FileUtils.rm_rf(tmpdir) }
 
     context 'Buildpack binaries' do
-      let(:test_buildpack) { VCAP::CloudController::Buildpack.create_from_hash({ name: 'upload_binary_buildpack', position: 0 }) }
+      let(:test_buildpack) { VCAP::CloudController::Buildpack.create_from_hash({ name: 'upload_binary_buildpack', stack: 'stack', position: 0 }) }
 
       before { CloudController::DependencyLocator.instance.register(:upload_handler, UploadHandler.new(TestConfig.config_instance)) }
 
@@ -75,6 +75,8 @@ module VCAP::CloudController
           expected_key = "#{test_buildpack.guid}_#{sha_valid_zip}"
 
           put "/v2/buildpacks/#{test_buildpack.guid}/bits", upload_body
+          expect(last_response.status).to eq(201)
+
           buildpack = Buildpack.find(name: 'upload_binary_buildpack')
           expect(buildpack.key).to eq(expected_key)
           expect(buildpack.filename).to eq(filename)
@@ -155,13 +157,13 @@ module VCAP::CloudController
         end
 
         it 'does not allow upload if the buildpack is locked' do
-          locked_buildpack = VCAP::CloudController::Buildpack.create_from_hash({ name: 'locked_buildpack', locked: true, position: 0 })
+          locked_buildpack = VCAP::CloudController::Buildpack.create_from_hash({ name: 'locked_buildpack', stack: 'stack', locked: true, position: 0 })
           put "/v2/buildpacks/#{locked_buildpack.guid}/bits", { buildpack: valid_zip2 }
           expect(last_response.status).to eq(409)
         end
 
         it 'does allow upload if the buildpack has been unlocked' do
-          locked_buildpack = VCAP::CloudController::Buildpack.create_from_hash({ name: 'locked_buildpack', locked: true, position: 0 })
+          locked_buildpack = VCAP::CloudController::Buildpack.create_from_hash({ name: 'locked_buildpack', stack: 'stack', locked: true, position: 0 })
           put "/v2/buildpacks/#{locked_buildpack.guid}", '{"locked": false}'
 
           put "/v2/buildpacks/#{locked_buildpack.guid}/bits", { buildpack: valid_zip2 }
@@ -177,7 +179,7 @@ module VCAP::CloudController
         end
 
         context 'when the same bits are uploaded twice' do
-          let(:test_buildpack2) { VCAP::CloudController::Buildpack.create_from_hash({ name: 'buildpack2', position: 0 }) }
+          let(:test_buildpack2) { VCAP::CloudController::Buildpack.create_from_hash({ name: 'buildpack2', stack: 'stack', position: 0 }) }
           before do
             put "/v2/buildpacks/#{test_buildpack.guid}/bits", { buildpack: valid_zip2 }
             put "/v2/buildpacks/#{test_buildpack2.guid}/bits", { buildpack: valid_zip2 }
@@ -209,7 +211,7 @@ module VCAP::CloudController
 
         before do
           TestConfig.override(staging_config)
-          VCAP::CloudController::Buildpack.create_from_hash({ name: 'get_binary_buildpack', key: 'xyz', position: 0 })
+          VCAP::CloudController::Buildpack.create_from_hash({ name: 'get_binary_buildpack', stack: 'stack', key: 'xyz', position: 0 })
         end
 
         it 'returns NOT AUTHENTICATED (401) users without correct basic auth' do

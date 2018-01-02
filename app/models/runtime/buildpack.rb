@@ -2,8 +2,8 @@ module VCAP::CloudController
   class Buildpack < Sequel::Model
     plugin :list
 
-    export_attributes :name, :position, :enabled, :locked, :filename
-    import_attributes :name, :position, :enabled, :locked, :filename, :key
+    export_attributes :name, :stack, :position, :enabled, :locked, :filename
+    import_attributes :name, :stack, :position, :enabled, :locked, :filename, :key
 
     def self.list_admin_buildpacks
       exclude(key: nil).exclude(key: '').order(:position).all
@@ -18,7 +18,7 @@ module VCAP::CloudController
     end
 
     def validate
-      validates_unique :name
+      validates_unique [:name, :stack]
       validates_format(/\A(\w|\-)+\z/, :name, message: 'name can only contain alphanumeric characters')
     end
 

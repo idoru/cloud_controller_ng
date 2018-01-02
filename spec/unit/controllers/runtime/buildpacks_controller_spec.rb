@@ -7,7 +7,7 @@ module VCAP::CloudController
     end
 
     let(:user) { make_user }
-    let(:req_body) { MultiJson.dump({ name: 'dynamic_test_buildpack', position: 1 }) }
+    let(:req_body) { MultiJson.dump({ name: 'dynamic_test_buildpack', stack: 'stack', position: 1 }) }
 
     before { set_current_user_as_admin }
 
@@ -19,6 +19,7 @@ module VCAP::CloudController
       it do
         expect(VCAP::CloudController::BuildpacksController).to have_creatable_attributes({
           name:     { type: 'string', required: true },
+          stack:    { type: 'string', default: '' },
           position: { type: 'integer', default: 0 },
           enabled:  { type: 'bool', default: true },
           locked:   { type: 'bool', default: false }
@@ -28,6 +29,7 @@ module VCAP::CloudController
       it do
         expect(VCAP::CloudController::BuildpacksController).to have_updatable_attributes({
           name:     { type: 'string' },
+          stack:    { type: 'string' },
           position: { type: 'integer' },
           enabled:  { type: 'bool' },
           locked:   { type: 'bool' }
@@ -60,11 +62,11 @@ module VCAP::CloudController
       end
 
       it 'respects position param' do
-        Buildpack.create(name: 'pre-existing-buildpack', position: 1)
-        Buildpack.create(name: 'pre-existing-buildpack-2', position: 2)
+        Buildpack.create(name: 'pre-existing-buildpack', stack: 'stack', position: 1)
+        Buildpack.create(name: 'pre-existing-buildpack-2', stack: 'stack', position: 2)
 
         expect {
-          post '/v2/buildpacks', MultiJson.dump({ name: 'new-buildpack', position: 2 })
+          post '/v2/buildpacks', MultiJson.dump({ name: 'new-buildpack', stack: 'stack', position: 2 })
         }.to change { ordered_buildpacks }.from(
           [['pre-existing-buildpack', 1], ['pre-existing-buildpack-2', 2]]
         ).to(
@@ -73,7 +75,7 @@ module VCAP::CloudController
       end
 
       it 'returns duplicate name message correctly' do
-        Buildpack.make(name: 'dynamic_test_buildpack')
+        Buildpack.make(name: 'dynamic_test_buildpack', stack: 'stack')
         post '/v2/buildpacks', req_body
         expect(last_response.status).to eq(400)
         expect(decoded_response['code']).to eq(290001)
@@ -81,7 +83,7 @@ module VCAP::CloudController
       end
 
       it 'returns buildpack invalid message correctly' do
-        post '/v2/buildpacks', MultiJson.dump({ name: 'invalid_name!' })
+        post '/v2/buildpacks', MultiJson.dump({ name: 'invalid_name!', stack: 'stack' })
         expect(last_response.status).to eq(400)
         expect(decoded_response['code']).to eq(290003)
         expect(Buildpack.count).to eq(0)
@@ -97,8 +99,8 @@ module VCAP::CloudController
     end
 
     describe '#update' do
-      let!(:buildpack1) { VCAP::CloudController::Buildpack.create({ name: 'first_buildpack', key: 'xyz', filename: 'a', position: 1 }) }
-      let!(:buildpack2) { VCAP::CloudController::Buildpack.create({ name: 'second_buildpack', key: 'xyz', filename: 'b', position: 2 }) }
+      let!(:buildpack1) { VCAP::CloudController::Buildpack.create({ name: 'first_buildpack', stack: 'stack', key: 'xyz', filename: 'a', position: 1 }) }
+      let!(:buildpack2) { VCAP::CloudController::Buildpack.create({ name: 'second_buildpack', stack: 'stack', key: 'xyz', filename: 'b', position: 2 }) }
 
       it 'can update the buildpack name' do
         set_current_user_as_admin
@@ -127,7 +129,7 @@ module VCAP::CloudController
     end
 
     describe '#delete' do
-      let!(:buildpack1) { VCAP::CloudController::Buildpack.create({ name: 'first_buildpack', key: 'xyz', position: 1 }) }
+      let!(:buildpack1) { VCAP::CloudController::Buildpack.create({ name: 'first_buildpack', stack: 'stack', key: 'xyz', position: 1 }) }
 
       it 'returns NOT AUTHORIZED (403) for non admins' do
         set_current_user(user)

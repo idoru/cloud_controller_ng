@@ -14,10 +14,10 @@ module VCAP::CloudController
         let(:blobstore_url_generator) { double('fake url generator') }
 
         let!(:java_buildpack) do
-          VCAP::CloudController::Buildpack.create(name: 'java', key: 'java-buildpack-key', position: 1, sha256_checksum: 'checksum')
+          VCAP::CloudController::Buildpack.create(name: 'java', stack: 'stack', key: 'java-buildpack-key', position: 1, sha256_checksum: 'checksum')
         end
         let!(:ruby_buildpack) do
-          VCAP::CloudController::Buildpack.create(name: 'ruby', key: 'ruby-buildpack-key', position: 2, sha256_checksum: 'checksum')
+          VCAP::CloudController::Buildpack.create(name: 'ruby', stack: 'stack', key: 'ruby-buildpack-key', position: 2, sha256_checksum: 'checksum')
         end
 
         before do
