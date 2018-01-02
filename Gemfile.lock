@@ -17,6 +17,13 @@ GIT
     vcap-concurrency (0.1.0)
 
 GIT
+  remote: https://github.com/idoru/rubyzip.git
+  revision: c787d94852b7d3e90212e8f7b08ad6ab6279c74d
+  branch: handle-gpbit-3
+  specs:
+    rubyzip (1.2.1)
+
+GIT
   remote: https://github.com/zipmark/rspec_api_documentation.git
   revision: de69a7a87adace29f39cbe937ae7bb8da9a4c9c1
   specs:
@@ -360,7 +367,6 @@ GEM
     ruby-progressbar (1.9.0)
     ruby_parser (3.8.3)
       sexp_processor (~> 4.1)
-    rubyzip (1.2.1)
     safe_yaml (1.0.4)
     scientist (1.1.0)
     sequel (4.49.0)
@@ -488,7 +494,7 @@ DEPENDENCIES
   rspec_api_documentation!
   rubocop
   ruby-debug-ide (>= 0.6.1.beta4)
-  rubyzip
+  rubyzip!
   scientist
   sequel
   sinatra (~> 1.4)
