@@ -14,17 +14,23 @@ module VCAP::CloudController
           logger = Steno.logger('cc.background')
           logger.info "Installing buildpack #{name}"
 
-          buildpack = Buildpack.find(name: name)
-          if buildpack.nil?
+          buildpacks = find_existing_buildpacks
+          buildpack = nil
+          if buildpacks.empty?
             buildpacks_lock = Locking[name: 'buildpacks']
             buildpacks_lock.db.transaction do
               buildpacks_lock.lock!
               buildpack = Buildpack.create(name: name)
             end
             created = true
-          elsif buildpack.locked
+          elsif buildpacks.count > 1
+            logger.error "Update failed: Unable to determine buildpack to update as there are multiple buildpacks named #{name} for different stacks."
+            return
+          elsif buildpacks.first.locked
             logger.info "Buildpack #{name} locked, not updated"
             return
+          else
+            buildpack = buildpacks.first
           end
 
           begin
@@ -54,6 +60,19 @@ module VCAP::CloudController
         def buildpack_uploader
           buildpack_blobstore = CloudController::DependencyLocator.instance.buildpack_blobstore
           UploadBuildpack.new(buildpack_blobstore)
+        end
+
+        private
+
+        def find_existing_buildpacks
+          stack = VCAP::CloudController::Buildpacks::StackNameExtractor.extract_from_file(file)
+          if stack.present?
+            buildpacks_by_stack = Buildpack.where(name: name, stack: stack)
+            return buildpacks_by_stack if buildpacks_by_stack.any?
+            return Buildpack.where(name: name, stack: nil)
+          end
+
+          Buildpack.where(name: name)
         end
       end
     end
