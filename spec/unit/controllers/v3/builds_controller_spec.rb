@@ -4,6 +4,7 @@ RSpec.describe BuildsController, type: :controller do
   describe '#create' do
     let(:org) { VCAP::CloudController::Organization.make }
     let(:space) { VCAP::CloudController::Space.make(organization: org) }
+    let(:stack) { VCAP::CloudController::Stack.default.name }
     let(:app_model) { VCAP::CloudController::AppModel.make(space: space) }
     let(:package) do
       VCAP::CloudController::PackageModel.make(
@@ -25,7 +26,7 @@ RSpec.describe BuildsController, type: :controller do
     before do
       allow(CloudController::DependencyLocator.instance).to receive(:stagers).and_return(stagers)
       allow(stagers).to receive(:stager_for_app).and_return(stager)
-      app_model.lifecycle_data.update(buildpacks: nil, stack: VCAP::CloudController::Stack.default.name)
+      app_model.lifecycle_data.update(buildpacks: nil, stack: stack)
       set_current_user_as_admin
     end
 
@@ -98,14 +99,14 @@ RSpec.describe BuildsController, type: :controller do
     end
 
     describe 'buildpack lifecycle' do
-      let(:buildpack) { VCAP::CloudController::Buildpack.make }
+      let(:buildpack) { VCAP::CloudController::Buildpack.make(stack: stack) }
       let(:buildpack_request) { 'http://dan-and-zach-awesome-pack.com' }
       let(:buildpack_lifecycle) do
         {
           type: 'buildpack',
           data: {
             buildpacks: [buildpack_request],
-            stack: 'cflinuxfs2'
+            stack: stack
           },
         }
       end
@@ -166,7 +167,7 @@ RSpec.describe BuildsController, type: :controller do
               type: 'buildpack',
               data: {
                 buildpacks: [],
-                stack: 'cflinuxfs2'
+                stack: stack
               },
             }
           end
@@ -185,7 +186,7 @@ RSpec.describe BuildsController, type: :controller do
               type: 'buildpack',
               data: {
                 buildpacks: nil,
-                stack: 'cflinuxfs2'
+                stack: stack
               },
             }
           end

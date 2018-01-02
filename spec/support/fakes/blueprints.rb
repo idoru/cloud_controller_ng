@@ -26,6 +26,7 @@ Sham.define do
   status              { |_| %w(active suspended cancelled).sample(1).first }
   error_message       { |index| "error-message-#{index}" }
   sequence_id         { |index| index }
+  stack               { |index| "cflinuxfs-#{index}" }
 end
 
 module VCAP::CloudController
@@ -395,6 +396,7 @@ module VCAP::CloudController
 
   Buildpack.blueprint do
     name { Sham.name }
+    stack { Sham.stack }
     key { Sham.guid }
     position { 0 }
     enabled { true }
