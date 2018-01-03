@@ -90,6 +90,7 @@ module VCAP::CloudController
           buildpack = Buildpack.find(name: 'upload_binary_buildpack')
           expect(buildpack.key).to eq(expected_key)
           expect(buildpack.filename).to eq(filename)
+          expect(buildpack.stack).to eq('stack')
           expect(buildpack_blobstore.exists?(expected_key)).to be true
         end
 
@@ -101,15 +102,38 @@ module VCAP::CloudController
           put "/v2/buildpacks/#{test_buildpack.guid}/bits", upload_body
         end
 
-        it 'sets the buildpack stack if it is unset' do
+        it 'sets the buildpack stack if it is unset and in buildpack manifest' do
           test_buildpack.update(stack: '')
-          buildpack = Buildpack.find(name: 'upload_binary_buildpack')
-          expect(buildpack.stack).to eq('')
 
           put "/v2/buildpacks/#{test_buildpack.guid}/bits", {buildpack: valid_zip_manifest, buildpack_name: valid_zip_manifest.path}
+          expect(last_response.status).to eql 201
 
           buildpack = Buildpack.find(name: 'upload_binary_buildpack')
           expect(buildpack.stack).to eq('stack-from-manifest')
+        end
+
+        it 'sets the buildpack stack to default if it is unset and NOT in buildpack manifest' do
+          test_buildpack.update(stack: '')
+
+          put "/v2/buildpacks/#{test_buildpack.guid}/bits", {buildpack: valid_zip, buildpack_name: valid_zip.path}
+          expect(last_response.status).to eql 201
+
+          buildpack = Buildpack.find(name: 'upload_binary_buildpack')
+          expect(buildpack.stack).to eq('default-stack-name')
+        end
+
+        it 'requires an existing stack to be the same as one in the manifest if it exists' do
+          test_buildpack.update(stack: 'not-from-manifest')
+
+          put "/v2/buildpacks/#{test_buildpack.guid}/bits", {buildpack: valid_zip_manifest, buildpack_name: valid_zip_manifest.path}
+          expect(last_response.status).to eql 422
+
+          json = MultiJson.load(last_response.body)
+          expect(json['code']).to eq(390009)
+          expect(json['description']).to eql 'Uploaded buildpack stack (stack-from-manifest) does not match not-from-manifest'
+
+          buildpack = Buildpack.find(name: 'upload_binary_buildpack')
+          expect(buildpack.stack).to eq('not-from-manifest')
         end
 
         it 'requires a filename as part of the upload' do

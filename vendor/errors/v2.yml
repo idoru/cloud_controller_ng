@@ -1143,3 +1143,8 @@
   name: SharedServiceInstanceCannotBeRenamed
   http_code: 422
   message: 'Service instances that have been shared cannot be renamed'
+
+390009:
+  name: BuildpackStacksDontMatch
+  http_code: 422
+  message: 'Uploaded buildpack stack (%s) does not match %s'
