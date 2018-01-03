@@ -8,6 +8,16 @@ module VCAP::CloudController
     let(:sha_valid_zip) { Digester.new(algorithm: Digest::SHA256).digest_file(valid_zip) }
     let(:sha_valid_zip2) { Digester.new(algorithm: Digest::SHA256).digest_file(valid_zip2) }
     let(:sha_valid_tar_gz) { Digester.new(algorithm: Digest::SHA256).digest_file(valid_tar_gz) }
+    let(:valid_zip_manifest) do
+      zip_name = File.join(tmpdir, filename)
+      TestZip.create(zip_name, 1, 1024) do |zipfile|
+        zipfile.get_output_stream('manifest.yml') do |f|
+          f.write("---\nstack: stack-from-manifest\n")
+        end
+      end
+      zip_file = File.new(zip_name)
+      Rack::Test::UploadedFile.new(zip_file)
+    end
     let(:valid_zip) do
       zip_name = File.join(tmpdir, filename)
       TestZip.create(zip_name, 1, 1024)
@@ -89,6 +99,17 @@ module VCAP::CloudController
             with(hash_including('buildpack_name' => filename), 'buildpack').
             and_return(valid_zip)
           put "/v2/buildpacks/#{test_buildpack.guid}/bits", upload_body
+        end
+
+        it 'sets the buildpack stack if it is unset' do
+          test_buildpack.update(stack: '')
+          buildpack = Buildpack.find(name: 'upload_binary_buildpack')
+          expect(buildpack.stack).to eq('')
+
+          put "/v2/buildpacks/#{test_buildpack.guid}/bits", {buildpack: valid_zip_manifest, buildpack_name: valid_zip_manifest.path}
+
+          buildpack = Buildpack.find(name: 'upload_binary_buildpack')
+          expect(buildpack.stack).to eq('stack-from-manifest')
         end
 
         it 'requires a filename as part of the upload' do

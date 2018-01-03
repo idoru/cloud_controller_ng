@@ -24,7 +24,10 @@ module VCAP::CloudController
 
       old_buildpack_key = nil
 
-      new_stack = extract_stack_from_buildpack(bits_file_path) || Stack.default.name
+      new_stack = buildpack.stack
+      if new_stack == ''
+        new_stack = extract_stack_from_buildpack(bits_file_path) || Stack.default.name
+      end
 
       begin
         Buildpack.db.transaction do
