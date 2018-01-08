@@ -42,6 +42,12 @@ module VCAP::CloudController
           expect(subject.update?(object)).to be_truthy
         end
       end
+
+      context 'when the organization is suspended' do
+        before { allow(object).to receive(:in_suspended_org?).and_return(true) }
+
+        it_behaves_like :full_access
+      end
     end
 
     context 'organization manager' do
