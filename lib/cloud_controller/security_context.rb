@@ -11,6 +11,10 @@ module VCAP::CloudController
       Thread.current[:vcap_auth_token] = auth_token
     end
 
+    def self.is_authenticated?
+      self.current_user != nil || self.roles.present?
+    end
+
     def self.current_user
       Thread.current[:vcap_user]
     end

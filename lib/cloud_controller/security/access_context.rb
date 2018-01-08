@@ -3,8 +3,11 @@ module VCAP::CloudController
     class AccessContext
       include ::Allowy::Context
 
+      READ_SCOPE = 'cloud_controller.read'
+
       def initialize(security_context)
         @security_context = security_context
+        @current_user = security_context.current_user
       end
 
       def admin_override
@@ -23,9 +26,25 @@ module VCAP::CloudController
         security_context.current_user
       end
 
+      def is_authenticated?
+        security_context.is_authenticated?
+      end
+
+      def can_view_resources?
+        security_context.admin? || security_context.scopes.include?(READ_SCOPE)
+      end
+
+      def can_write_globally?
+        security_context.admin?
+      end
+
+      def can_write_to_space?(space)
+        space.has_developer?(current_user)
+      end
+
       private
 
-      attr_reader :security_context
+      attr_reader :security_context, :current_user
     end
   end
 end

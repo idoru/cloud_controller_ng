@@ -1,11 +1,11 @@
 module VCAP::CloudController
   class RouteAccess < BaseAccess
     def create?(route, params=nil)
-      return true if admin_user?
+      return true if context.can_write_globally?
       return false if route.in_suspended_org?
       return false if route.host == '*' && route.domain.shared?
       FeatureFlag.raise_unless_enabled!(:route_creation)
-      route.space.has_developer?(context.user)
+      context.can_write_to_space?(route.space)
     end
 
     def read_for_update?(route, params=nil)
@@ -13,10 +13,10 @@ module VCAP::CloudController
     end
 
     def update?(route, params=nil)
-      return true if admin_user?
+      return true if context.can_write_globally?
       return false if route.in_suspended_org?
       return false if route.host == '*' && route.domain.shared?
-      route.space.has_developer?(context.user)
+      context.can_write_to_space?(route.space)
     end
 
     def delete?(route)
@@ -24,11 +24,11 @@ module VCAP::CloudController
     end
 
     def reserved?(_)
-      logged_in?
+      context.is_authenticated?
     end
 
     def reserved_with_token?(_)
-      admin_user? || has_read_scope?
+      context.can_view_resources?
     end
   end
 end
