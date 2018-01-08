@@ -2,7 +2,8 @@ require 'spec_helper'
 
 module VCAP::CloudController
   RSpec.describe SpaceQuotaDefinitionAccess, type: :access do
-    subject(:access) { SpaceQuotaDefinitionAccess.new(Security::AccessContext.new) }
+    let(:access_context) { Security::AccessContext.new(VCAP::CloudController::SecurityContext) }
+    subject(:access) { SpaceQuotaDefinitionAccess.new(access_context) }
     let(:user) { VCAP::CloudController::User.make }
     let(:org) { Organization.make }
     let(:scopes) { nil }

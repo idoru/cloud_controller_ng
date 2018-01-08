@@ -74,12 +74,12 @@ module VCAP::CloudController::RestController
     private
 
     def default_visibility_filter
-      access_context = VCAP::CloudController::Security::AccessContext.new
+      access_context = VCAP::CloudController::Security::AccessContext.new(VCAP::CloudController::SecurityContext)
       proc { |ds| ds.filter(ds.model.user_visibility(access_context.user, access_context.admin_override)) }
     end
 
     def default_visibility_filter_with_read_privileges
-      access_context = VCAP::CloudController::Security::AccessContext.new
+      access_context = VCAP::CloudController::Security::AccessContext.new(VCAP::CloudController::SecurityContext)
       proc { |ds| ds.filter(ds.model.user_visibility_for_read(access_context.user, access_context.admin_override)) }
     end
   end

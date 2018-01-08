@@ -2,7 +2,8 @@ require 'spec_helper'
 
 module VCAP::CloudController
   RSpec.describe AppUsageEventAccess, type: :access do
-    subject(:access) { AppUsageEventAccess.new(Security::AccessContext.new) }
+    let(:access_context) { Security::AccessContext.new(VCAP::CloudController::SecurityContext) }
+    subject(:access) { AppUsageEventAccess.new(access_context) }
     let(:token) { { 'scope' => ['cloud_controller.read', 'cloud_controller.write'] } }
     let(:user) { VCAP::CloudController::User.make }
     let(:object) { VCAP::CloudController::AppUsageEvent.make }

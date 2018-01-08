@@ -2,7 +2,8 @@ require 'spec_helper'
 
 module VCAP::CloudController
   RSpec.describe UserAccess, type: :access do
-    subject(:access) { UserAccess.new(Security::AccessContext.new) }
+    let(:access_context) { Security::AccessContext.new(VCAP::CloudController::SecurityContext) }
+    subject(:access) { UserAccess.new(access_context) }
     let(:object) { VCAP::CloudController::User.make }
     let(:user) { VCAP::CloudController::User.make }
 

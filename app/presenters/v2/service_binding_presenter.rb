@@ -23,7 +23,7 @@ module CloudController
         private
 
         def redact_creds_if_necessary(binding)
-          access_context = VCAP::CloudController::Security::AccessContext.new
+          access_context = VCAP::CloudController::Security::AccessContext.new(VCAP::CloudController::SecurityContext)
 
           return binding.credentials if access_context.can?(:read_env, binding)
           { 'redacted_message' => VCAP::CloudController::Presenters::V3::BasePresenter::REDACTED_MESSAGE }

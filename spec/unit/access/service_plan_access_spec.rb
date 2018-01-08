@@ -2,7 +2,8 @@ require 'spec_helper'
 
 module VCAP::CloudController
   RSpec.describe ServicePlanAccess, type: :access do
-    subject(:access) { ServicePlanAccess.new(Security::AccessContext.new) }
+    let(:access_context) { Security::AccessContext.new(VCAP::CloudController::SecurityContext) }
+    subject(:access) { ServicePlanAccess.new(access_context) }
     let(:user) { VCAP::CloudController::User.make }
     let(:service) { VCAP::CloudController::Service.make }
     let(:object) { VCAP::CloudController::ServicePlan.make(service: service) }
