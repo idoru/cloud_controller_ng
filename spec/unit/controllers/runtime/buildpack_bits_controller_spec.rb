@@ -18,6 +18,16 @@ module VCAP::CloudController
       zip_file = File.new(zip_name)
       Rack::Test::UploadedFile.new(zip_file)
     end
+    let(:valid_zip_unknown_stack) do
+      zip_name = File.join(tmpdir, filename)
+      TestZip.create(zip_name, 1, 1024) do |zipfile|
+        zipfile.get_output_stream('manifest.yml') do |f|
+          f.write("---\nstack: unknown-stack\n")
+        end
+      end
+      zip_file = File.new(zip_name)
+      Rack::Test::UploadedFile.new(zip_file)
+    end
     let(:valid_zip) do
       zip_name = File.join(tmpdir, filename)
       TestZip.create(zip_name, 1, 1024)
@@ -61,6 +71,9 @@ module VCAP::CloudController
           TestConfig.override(directories: { tmpdir: File.dirname(valid_zip.path) })
           @cache = Delayed::Worker.delay_jobs
           Delayed::Worker.delay_jobs = false
+
+          Stack.create(name: 'stack')
+          Stack.create(name: 'stack-from-manifest')
         end
 
         after { Delayed::Worker.delay_jobs = @cache }
@@ -110,6 +123,16 @@ module VCAP::CloudController
 
           buildpack = Buildpack.find(name: 'upload_binary_buildpack')
           expect(buildpack.stack).to eq('stack-from-manifest')
+        end
+
+        it 'returns ERROR (422) if provided stack does not exist' do
+          test_buildpack.update(stack: '')
+
+          put "/v2/buildpacks/#{test_buildpack.guid}/bits", {buildpack: valid_zip_unknown_stack, buildpack_name: valid_zip_unknown_stack.path}
+          expect(last_response.status).to eql 422
+
+          buildpack = Buildpack.find(name: 'upload_binary_buildpack')
+          expect(buildpack.stack).to eq('')
         end
 
         it 'sets the buildpack stack to default if it is unset and NOT in buildpack manifest' do

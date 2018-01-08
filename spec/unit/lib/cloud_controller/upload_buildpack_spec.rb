@@ -13,9 +13,14 @@ module VCAP::CloudController
     let(:sha_valid_zip) { Digester.new(algorithm: Digest::SHA256).digest_file(valid_zip) }
     let(:sha_valid_zip2) { Digester.new(algorithm: Digest::SHA256).digest_file(valid_zip2) }
 
+    let(:valid_zip_manifest_stack) { nil }
     let(:valid_zip) do
       zip_name = File.join(tmpdir, filename)
-      TestZip.create(zip_name, 1, 1024)
+      TestZip.create(zip_name, 1, 1024) do |zipfile|
+        zipfile.get_output_stream('manifest.yml') do |f|
+          f.write("---\nstack: #{valid_zip_manifest_stack}\n")
+        end if valid_zip_manifest_stack
+      end
       zip_file = File.new(zip_name)
       Rack::Test::UploadedFile.new(zip_file)
     end
@@ -37,6 +42,60 @@ module VCAP::CloudController
       end
 
       context 'and the upload to the blobstore succeeds' do
+        context 'stack from manifest' do
+          context 'same as buildpack' do
+            let(:valid_zip_manifest_stack) { 'cflinuxfs2' }
+
+            it 'copies new bits to the blobstore' do
+              expect(buildpack_blobstore).to receive(:cp_to_blobstore).with(valid_zip, expected_sha_valid_zip)
+
+              upload_buildpack.upload_buildpack(buildpack, valid_zip, filename)
+            end
+          end
+
+          context 'different from buildpack' do
+            let(:valid_zip_manifest_stack) { 'cflinuxfs3' }
+            before do
+              VCAP::CloudController::Stack.create(name: 'cflinuxfs3')
+            end
+
+            it 'raises an error and does not update stack' do
+              expect { upload_buildpack.upload_buildpack(buildpack, valid_zip, filename) }.to raise_error(CloudController::Errors::ApiError)
+              bp = Buildpack.find(name: buildpack.name)
+              expect(bp).to_not be_nil
+              expect(bp.stack).to eq('cflinuxfs2')
+            end
+          end
+
+          context 'stack previously empty' do
+            let!(:buildpack) { VCAP::CloudController::Buildpack.create_from_hash({ name: 'upload_binary_buildpack', stack: '', position: 0 }) }
+            context 'known' do
+              let(:valid_zip_manifest_stack) { 'cflinuxfs3' }
+              before do
+                VCAP::CloudController::Stack.create(name: 'cflinuxfs3')
+              end
+
+              it 'copies new bits to the blobstore and updates the stack' do
+                expect(buildpack_blobstore).to receive(:cp_to_blobstore).with(valid_zip, expected_sha_valid_zip)
+
+                expect(buildpack.stack).to eq('')
+                upload_buildpack.upload_buildpack(buildpack, valid_zip, filename)
+                expect(buildpack.stack).to eq('cflinuxfs3')
+              end
+            end
+
+            context 'unknown' do
+              let(:valid_zip_manifest_stack) { 'new-and-unknown' }
+              it 'raises an error' do
+                expect { upload_buildpack.upload_buildpack(buildpack, valid_zip, filename) }.to raise_error(CloudController::Errors::ApiError)
+                bp = Buildpack.find(name: buildpack.name)
+                expect(bp).to_not be_nil
+                expect(bp.filename).to be_nil
+              end
+            end
+          end
+        end
+
         it 'updates the buildpack filename' do
           expect {
             upload_buildpack.upload_buildpack(buildpack, valid_zip, filename)

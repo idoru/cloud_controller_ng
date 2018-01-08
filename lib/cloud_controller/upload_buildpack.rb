@@ -24,7 +24,11 @@ module VCAP::CloudController
 
       old_buildpack_key = nil
 
-      new_stack = [ extract_stack_from_buildpack(bits_file_path), buildpack.stack, Stack.default.name ].find { |s| s.to_s != '' }
+      extracted_stack = extract_stack_from_buildpack(bits_file_path)
+      if extracted_stack.to_s != ''
+        raise CloudController::Errors::ApiError.new_from_details('BuildpackStackDoesNotExist', extracted_stack) unless Stack.where(name: extracted_stack).first
+      end
+      new_stack = [extracted_stack, buildpack.stack, Stack.default.name ].find { |s| s.to_s != '' }
       if buildpack.stack.to_s != '' && buildpack.stack != new_stack
         raise CloudController::Errors::ApiError.new_from_details('BuildpackStacksDontMatch', new_stack, buildpack.stack)
       end

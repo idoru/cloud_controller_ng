@@ -1148,3 +1148,10 @@
   name: BuildpackStacksDontMatch
   http_code: 422
   message: 'Uploaded buildpack stack (%s) does not match %s'
+
+390010:
+  name: BuildpackStackDoesNotExist
+  http_code: 422
+  message: 'Uploaded buildpack stack (%s) does not exist'
+
+
