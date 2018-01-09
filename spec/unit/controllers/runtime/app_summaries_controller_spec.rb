@@ -56,7 +56,11 @@ module VCAP::CloudController
         it 'should contain the basic app attributes' do
           expect(last_response.status).to eq(200)
           expect(decoded_response['guid']).to eq(@process.guid)
-          parse(MultiJson.dump(@process.to_hash)).each do |k, v|
+
+          access_context = spy(VCAP::CloudController::Security::AccessContext)
+          allow(access_context).to receive(:can).with(:read_env, @process).and_return true
+          expected_process_hash = @process.to_hash(access_context)
+          parse(MultiJson.dump(expected_process_hash)).each do |k, v|
             expect(v).to eql(decoded_response[k.to_s]), "value of field #{k} expected to eql #{v}"
           end
         end

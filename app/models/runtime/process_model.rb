@@ -518,8 +518,8 @@ module VCAP::CloudController
       db.after_commit { ProcessObserver.updated(self) unless skip_process_observer_on_update }
     end
 
-    def to_hash(opts={})
-      opts[:redact] = if !VCAP::CloudController::Security::AccessContext.new.can?(:read_env, self)
+    def to_hash(access_context, opts={})
+      opts[:redact] = if !access_context.can?(:read_env, self)
                         %w(environment_json system_env_json)
                       end
       super(opts)

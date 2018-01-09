@@ -12,6 +12,7 @@ module VCAP::CloudController
     def summary(guid)
       process = find_guid_and_validate_access(:read, guid)
 
+      process_hash = process.to_hash(access_context)
       app_info = {
         'guid'              => process.guid,
         'name'              => process.name,
@@ -19,7 +20,7 @@ module VCAP::CloudController
         'running_instances' => instances_reporters.number_of_starting_and_running_instances_for_process(process),
         'services'          => process.service_bindings.map { |service_binding| service_binding.service_instance.as_summary_json },
         'available_domains' => (process.space.organization.private_domains + SharedDomain.all).map(&:as_summary_json)
-      }.merge(process.to_hash)
+      }.merge(process_hash)
 
       MultiJson.dump(app_info)
     end

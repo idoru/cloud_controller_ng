@@ -38,6 +38,7 @@ module VCAP::CloudController
     def app_summary(space)
       instances = instances_reporters.number_of_starting_and_running_instances_for_processes(space.apps)
       space.apps.reject { |process| process.app.nil? }.collect do |process|
+        process_hash = process.to_hash(access_context)
         {
           guid:              process.guid,
           urls:              process.routes.map(&:uri),
@@ -45,7 +46,7 @@ module VCAP::CloudController
           service_count:     process.service_bindings_dataset.count,
           service_names:     process.service_bindings_dataset.map(&:service_instance).map(&:name),
           running_instances: instances[process.guid],
-        }.merge(process.to_hash)
+        }.merge(process_hash)
       end
     end
 

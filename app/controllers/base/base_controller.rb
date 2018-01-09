@@ -207,7 +207,7 @@ module VCAP::CloudController::RestController
       @request_attrs.freeze
     end
 
-    attr_reader :config, :logger, :env, :params, :body, :request_attrs
+    attr_reader :config, :logger, :env, :params, :body, :request_attrs, :access_context
 
     class << self
       include VCAP::CloudController

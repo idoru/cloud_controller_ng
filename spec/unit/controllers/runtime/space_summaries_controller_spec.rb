@@ -36,6 +36,11 @@ module VCAP::CloudController
 
       it 'returns the space apps' do
         get "/v2/spaces/#{space.guid}/summary"
+
+        access_context = spy(VCAP::CloudController::Security::AccessContext)
+        allow(access_context).to receive(:can).with(:read_env, process).and_return true
+        expected_process_hash = process.to_hash(access_context)
+
         expected_app_hash = {
           guid: process.guid,
           urls: [first_route.uri, second_route.uri],
@@ -45,7 +50,7 @@ module VCAP::CloudController
           ],
           service_count: 2,
           running_instances: 5
-        }.merge(process.to_hash)
+        }.merge(expected_process_hash)
 
         expect(decoded_response['apps'][0]).to include(MultiJson.load(MultiJson.dump(expected_app_hash)))
         expect(decoded_response['apps'][0]['service_names']).to match_array([first_service.name, second_service.name])
