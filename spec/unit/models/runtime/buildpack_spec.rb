@@ -14,7 +14,7 @@ module VCAP::CloudController
       describe 'name' do
         it 'does not allow non-word non-dash characters' do
           ['git://github.com', '$abc', 'foobar!'].each do |name|
-            buildpack = Buildpack.new(name: name)
+            buildpack = Buildpack.new(name: name, stack: 'unknown')
             expect(buildpack).not_to be_valid
             expect(buildpack.errors.on(:name)).to be_present
           end
@@ -22,7 +22,7 @@ module VCAP::CloudController
 
         it 'allows word and dash characters' do
           ['name', 'name-with-dash', '-name-'].each do |name|
-            buildpack = Buildpack.new(name: name)
+            buildpack = Buildpack.new(name: name, stack: 'unknown')
             expect(buildpack).to be_valid
           end
         end

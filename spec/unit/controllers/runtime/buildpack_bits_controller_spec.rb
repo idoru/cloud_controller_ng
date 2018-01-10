@@ -116,7 +116,7 @@ module VCAP::CloudController
         end
 
         it 'sets the buildpack stack if it is unset and in buildpack manifest' do
-          test_buildpack.update(stack: '')
+          test_buildpack.update(stack: 'unknown')
 
           put "/v2/buildpacks/#{test_buildpack.guid}/bits", {buildpack: valid_zip_manifest, buildpack_name: valid_zip_manifest.path}
           expect(last_response.status).to eql 201
@@ -126,17 +126,17 @@ module VCAP::CloudController
         end
 
         it 'returns ERROR (422) if provided stack does not exist' do
-          test_buildpack.update(stack: '')
+          test_buildpack.update(stack: 'unknown')
 
           put "/v2/buildpacks/#{test_buildpack.guid}/bits", {buildpack: valid_zip_unknown_stack, buildpack_name: valid_zip_unknown_stack.path}
           expect(last_response.status).to eql 422
 
           buildpack = Buildpack.find(name: 'upload_binary_buildpack')
-          expect(buildpack.stack).to eq('')
+          expect(buildpack.stack).to eq('unknown')
         end
 
         it 'sets the buildpack stack to default if it is unset and NOT in buildpack manifest' do
-          test_buildpack.update(stack: '')
+          test_buildpack.update(stack: 'unknown')
 
           put "/v2/buildpacks/#{test_buildpack.guid}/bits", {buildpack: valid_zip, buildpack_name: valid_zip.path}
           expect(last_response.status).to eql 201
@@ -198,7 +198,7 @@ module VCAP::CloudController
           response = MultiJson.load(last_response.body)
           entity = response['entity']
           expect(entity['name']).to eq('upload_binary_buildpack')
-          expect(entity['filename']).to eq(filename)
+          expect(entity['filename']).to eq("#{filename} (stack)")
           expect(buildpack_blobstore.exists?(expected_sha)).to be false
         end
 

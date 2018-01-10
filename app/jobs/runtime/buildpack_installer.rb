@@ -14,9 +14,20 @@ module VCAP::CloudController
           logger = Steno.logger('cc.background')
           logger.info "Installing buildpack #{name}"
 
-          buildpack = Buildpack.find(name: name)
+          stack = buildpack_uploader.extract_stack_from_buildpack(file)
+          if stack.to_s != ''
+            buildpack = Buildpack.find(name: name, stack: stack)
+          else
+            buildpacks = Buildpack.where(name: name)
+            if buildpacks.count > 1
+              logger.error "Buildpack #{name} has #{buildpacks.count} stacks, not updated"
+              return
+            elsif buildpacks.count == 1
+              buildpack = buildpacks.first
+            end
+          end
           if buildpack.nil?
-            buildpack = Buildpack.create(name: name, stack: '')
+            buildpack = Buildpack.create(name: name, stack: 'unknown')
             created = true
           elsif buildpack.locked
             logger.info "Buildpack #{name} locked, not updated"
