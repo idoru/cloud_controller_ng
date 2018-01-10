@@ -8,7 +8,7 @@ module CloudController
 
         def entity_hash(controller, buildpack, opts, depth, parents, orphans=nil)
           entity = super
-          entity['filename'] = "#{buildpack.filename} (#{buildpack.stack})"
+          entity['filename'] = "#{buildpack.filename} (#{buildpack.stack})".strip
           entity
         end
       end

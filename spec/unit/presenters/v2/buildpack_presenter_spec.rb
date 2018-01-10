@@ -31,6 +31,12 @@ module CloudController::Presenters::V2
 
         expect(actual_entity_hash).to be_a_response_like(expected_entity_hash)
       end
+
+      it 'formats correctly when no filename is present' do
+        buildpack.filename = ''
+        actual_entity_hash = buildpack_presenter.entity_hash(controller, buildpack, opts, depth, parents, orphans)
+        expect(actual_entity_hash['filename']).to eq("(#{buildpack.stack})")
+      end
     end
   end
 end
