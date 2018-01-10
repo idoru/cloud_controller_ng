@@ -67,8 +67,8 @@ module VCAP::CloudController
             end
           end
 
-          context 'stack previously empty' do
-            let!(:buildpack) { VCAP::CloudController::Buildpack.create_from_hash({ name: 'upload_binary_buildpack', stack: '', position: 0 }) }
+          context 'stack previously unknown' do
+            let!(:buildpack) { VCAP::CloudController::Buildpack.create_from_hash({ name: 'upload_binary_buildpack', stack: 'unknown', position: 0 }) }
             context 'known' do
               let(:valid_zip_manifest_stack) { 'cflinuxfs3' }
               before do
@@ -78,9 +78,9 @@ module VCAP::CloudController
               it 'copies new bits to the blobstore and updates the stack' do
                 expect(buildpack_blobstore).to receive(:cp_to_blobstore).with(valid_zip, expected_sha_valid_zip)
 
-                expect(buildpack.stack).to eq('')
-                upload_buildpack.upload_buildpack(buildpack, valid_zip, filename)
-                expect(buildpack.stack).to eq('cflinuxfs3')
+                expect do
+                  upload_buildpack.upload_buildpack(buildpack, valid_zip, filename)
+                end.to change { buildpack.stack }.from('unknown').to('cflinuxfs3')
               end
             end
 

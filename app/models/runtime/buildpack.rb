@@ -20,6 +20,7 @@ module VCAP::CloudController
     def validate
       validates_unique [:name, :stack]
       validates_format(/\A(\w|\-)+\z/, :name, message: 'name can only contain alphanumeric characters')
+      validates_presence :stack
     end
 
     def locked?

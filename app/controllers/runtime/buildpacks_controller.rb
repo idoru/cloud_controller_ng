@@ -6,7 +6,7 @@ module VCAP::CloudController
 
     define_attributes do
       attribute :name, String
-      attribute :stack, String, default: ''
+      attribute :stack, String, default: 'unknown'
       attribute :position, Integer, default: 0
       attribute :enabled, Message::Boolean, default: true
       attribute :locked, Message::Boolean, default: false

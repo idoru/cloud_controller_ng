@@ -19,7 +19,7 @@ module VCAP::CloudController
       it do
         expect(VCAP::CloudController::BuildpacksController).to have_creatable_attributes({
           name:     { type: 'string', required: true },
-          stack:    { type: 'string', default: '' },
+          stack:    { type: 'string', default: 'unknown' },
           position: { type: 'integer', default: 0 },
           enabled:  { type: 'bool', default: true },
           locked:   { type: 'bool', default: false }
@@ -59,6 +59,24 @@ module VCAP::CloudController
         buildpack = Buildpack.first
         expect(buildpack.name).to eq('dynamic_test_buildpack')
         expect(buildpack.position).to eq(1)
+      end
+
+      it 'defaults stack to unknown when nil' do
+        expect do
+          post '/v2/buildpacks', MultiJson.dump({ name: 'a_buildpack', position: 1 })
+          expect(last_response.status).to eq(201)
+        end.to change { Buildpack.count }.from(0).to(1)
+        buildpack = Buildpack.first
+        expect(buildpack.stack).to eq('unknown')
+      end
+
+      it 'uses specified stack' do
+        expect do
+          post '/v2/buildpacks', MultiJson.dump({ name: 'a_buildpack', stack: 'cflinuxfs99', position: 1 })
+          expect(last_response.status).to eq(201)
+        end.to change { Buildpack.count }.from(0).to(1)
+        buildpack = Buildpack.first
+        expect(buildpack.stack).to eq('cflinuxfs99')
       end
 
       it 'respects position param' do
