@@ -19,6 +19,9 @@ module VCAP::CloudController
         let!(:ruby_buildpack) do
           VCAP::CloudController::Buildpack.create(name: 'ruby', stack: 'stack', key: 'ruby-buildpack-key', position: 2, sha256_checksum: 'checksum')
         end
+        let!(:ruby_buildpack_other_stack) do
+          VCAP::CloudController::Buildpack.create(name: 'ruby', stack: 'stack2', key: 'ruby-buildpack-stack2-key', position: 3, sha256_checksum: 'checksum')
+        end
 
         before do
           allow(blobstore_url_generator).to receive(:app_package_download_url).and_return(app_package_download_url)
@@ -40,8 +43,8 @@ module VCAP::CloudController
             let(:admin_buildpack_info) { BuildpackInfo.new('java', VCAP::CloudController::Buildpack.find(name: 'java')) }
             let(:buildpack_infos) { [custom_buildpack_info, admin_buildpack_info] }
 
-            it 'returns both buildpacks' do
-              expect(buildpack_entry_generator.buildpack_entries(buildpack_infos)).to eq([
+            it 'returns both buildpacks for the stack' do
+              expect(buildpack_entry_generator.buildpack_entries(buildpack_infos, 'stack')).to eq([
                 { name: 'custom', key: 'http://example.com/my_buildpack_url.zip', url: 'http://example.com/my_buildpack_url.zip', skip_detect: true },
                 { name: 'java', key: 'java-buildpack-key', url: admin_buildpack_download_url, skip_detect: true, sha256: 'checksum' },
               ])
@@ -53,7 +56,7 @@ module VCAP::CloudController
               let(:buildpack) { 'http://example.com/my_buildpack_url.zip' }
 
               it "should use the buildpack_uri and name it 'custom', and use the url as the key" do
-                expect(buildpack_entry_generator.buildpack_entries(buildpack_infos)).to eq([
+                expect(buildpack_entry_generator.buildpack_entries(buildpack_infos, 'stack')).to eq([
                   { name: 'custom', key: 'http://example.com/my_buildpack_url.zip', url: 'http://example.com/my_buildpack_url.zip', skip_detect: true }
                 ])
               end
@@ -63,7 +66,7 @@ module VCAP::CloudController
               let(:buildpack) { 'http://example.com/my_buildpack_url' }
 
               it "should use the buildpack_uri and name it 'custom', and use the url as the key" do
-                expect(buildpack_entry_generator.buildpack_entries(buildpack_infos)).to eq([
+                expect(buildpack_entry_generator.buildpack_entries(buildpack_infos, 'stack')).to eq([
                   { name: 'custom', key: 'http://example.com/my_buildpack_url', url: 'http://example.com/my_buildpack_url', skip_detect: true }
                 ])
               end
@@ -74,7 +77,7 @@ module VCAP::CloudController
             let(:buildpack) { 'java' }
 
             it 'should use that buildpack' do
-              expect(buildpack_entry_generator.buildpack_entries(buildpack_infos)).to eq([
+              expect(buildpack_entry_generator.buildpack_entries(buildpack_infos, 'stack')).to eq([
                 { name: 'java', key: 'java-buildpack-key', url: admin_buildpack_download_url, skip_detect: true, sha256: 'checksum' }
               ])
             end
@@ -85,7 +88,7 @@ module VCAP::CloudController
               end
 
               it 'fails fast with a clear error' do
-                expect { buildpack_entry_generator.buildpack_entries(buildpack_infos) }.to raise_error /Unsupported buildpack type/
+                expect { buildpack_entry_generator.buildpack_entries(buildpack_infos, 'stack') }.to raise_error /Unsupported buildpack type/
               end
             end
           end
@@ -93,10 +96,18 @@ module VCAP::CloudController
           context 'when the user has not requested a buildpack' do
             let(:buildpack_infos) { [] }
 
-            it 'should use the list of admin buildpacks' do
-              expect(buildpack_entry_generator.buildpack_entries(buildpack_infos)).to eq([
+            it 'should use the list of admin buildpacks for the specified stack' do
+              expect(buildpack_entry_generator.buildpack_entries(buildpack_infos, 'stack')).to eq([
                 { name: 'java', key: 'java-buildpack-key', url: admin_buildpack_download_url, sha256: 'checksum', skip_detect: false },
                 { name: 'ruby', key: 'ruby-buildpack-key', url: admin_buildpack_download_url, sha256: 'checksum', skip_detect: false },
+              ])
+            end
+
+            it 'should use the list of all admin buildpacks if no stack  is specified' do
+              expect(buildpack_entry_generator.buildpack_entries(buildpack_infos, nil)).to eq([
+                { name: 'java', key: 'java-buildpack-key', url: admin_buildpack_download_url, sha256: 'checksum', skip_detect: false },
+                { name: 'ruby', key: 'ruby-buildpack-key', url: admin_buildpack_download_url, sha256: 'checksum', skip_detect: false },
+                { name: 'ruby', key: 'ruby-buildpack-stack2-key', url: admin_buildpack_download_url, sha256: 'checksum', skip_detect: false },
               ])
             end
           end
@@ -105,7 +116,7 @@ module VCAP::CloudController
             let(:buildpack) { '???' }
 
             it 'fails fast with a clear error' do
-              expect { buildpack_entry_generator.buildpack_entries(buildpack_infos) }.to raise_error /Unsupported buildpack type/
+              expect { buildpack_entry_generator.buildpack_entries(buildpack_infos, 'stack') }.to raise_error /Unsupported buildpack type/
             end
           end
         end
