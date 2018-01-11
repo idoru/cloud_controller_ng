@@ -5,8 +5,10 @@ module VCAP::CloudController
     export_attributes :name, :stack, :position, :enabled, :locked, :filename
     import_attributes :name, :stack, :position, :enabled, :locked, :filename, :key
 
-    def self.list_admin_buildpacks
-      exclude(key: nil).exclude(key: '').order(:position).all
+    def self.list_admin_buildpacks(stack_name = nil)
+      scoped = exclude(key: nil).exclude(key: '')
+      scoped = scoped.where(stack: stack_name) if stack_name
+      scoped.order(:position).all
     end
 
     def self.at_last_position
