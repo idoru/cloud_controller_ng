@@ -95,7 +95,7 @@ module VCAP::CloudController
       it 'returns duplicate name message correctly' do
         Buildpack.make(name: 'dynamic_test_buildpack', stack: 'stack')
         post '/v2/buildpacks', req_body
-        expect(last_response.status).to eq(400)
+        expect(last_response.status).to eq(409)
         expect(decoded_response['code']).to eq(290001)
         expect(Buildpack.count).to eq(1)
       end
