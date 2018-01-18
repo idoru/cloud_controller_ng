@@ -209,6 +209,19 @@ module VCAP::CloudController
           expect(last_response.status).to eq(204)
         end
 
+        it 'does not allow uploading a buildpack which will update the stack that already has a buildpack with the same name' do
+          first_buildpack = VCAP::CloudController::Buildpack.create_from_hash({ name: 'nice_buildpack', stack: 'unknown', position: 0 })
+          put "/v2/buildpacks/#{first_buildpack.guid}/bits", { buildpack: valid_zip_manifest }
+
+          buildpack = Buildpack.find(name: 'nice_buildpack')
+          expect(buildpack.stack).to eq('stack-from-manifest')
+
+          new_buildpack = VCAP::CloudController::Buildpack.create_from_hash({ name: first_buildpack.name, stack: 'unknown', position: 0 })
+          put "/v2/buildpacks/#{new_buildpack.guid}/bits", { buildpack: valid_zip_manifest }
+
+          expect(last_response.status).to eq(409)
+        end
+
         it 'allowed when same bits but different filename are uploaded again' do
           put "/v2/buildpacks/#{test_buildpack.guid}/bits", { buildpack: valid_zip }
           new_name = File.join(File.dirname(valid_zip.path), 'newfilename.zip')

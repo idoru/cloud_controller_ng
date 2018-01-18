@@ -82,6 +82,15 @@ module VCAP::CloudController
                   upload_buildpack.upload_buildpack(buildpack, valid_zip, filename)
                 end.to change { buildpack.stack }.from('unknown').to('cflinuxfs3')
               end
+
+              context 'buildpack with same name and stack exists' do
+                let(:valid_zip_manifest_stack) { 'cflinuxfs3' }
+
+                it 'raises an error' do
+                  VCAP::CloudController::Buildpack.create(name: buildpack.name, stack: 'cflinuxfs3')
+                  expect { upload_buildpack.upload_buildpack(buildpack, valid_zip, filename) }.to raise_error(CloudController::Errors::ApiError)
+                end
+              end
             end
 
             context 'unknown' do

@@ -840,7 +840,7 @@
 
 290001:
   name: BuildpackNameStackTaken
-  http_code: 400
+  http_code: 409
   message: "The buildpack name %s is already in use for the stack %s"
 
 290002:

@@ -33,6 +33,10 @@ module VCAP::CloudController
         raise CloudController::Errors::ApiError.new_from_details('BuildpackStacksDontMatch', new_stack, buildpack.stack)
       end
 
+      if buildpack.stack != new_stack && Buildpack.find(name: buildpack.name, stack: new_stack)
+        raise CloudController::Errors::ApiError.new_from_details('BuildpackNameStackTaken', buildpack.name, new_stack)
+      end
+
       begin
         Buildpack.db.transaction do
           buildpack.lock!
