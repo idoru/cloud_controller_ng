@@ -15,6 +15,7 @@ module VCAP::CloudController
           logger.info "Installing buildpack #{name}"
 
           buildpacks = find_existing_buildpacks
+          buildpack = nil
           if buildpacks.empty?
             buildpacks_lock = Locking[name: 'buildpacks']
             buildpacks_lock.db.transaction do
@@ -28,8 +29,9 @@ module VCAP::CloudController
           elsif buildpacks.first.locked
             logger.info "Buildpack #{name} locked, not updated"
             return
+          else
+            buildpack = buildpacks.first
           end
-          buildpack = buildpacks.first
 
           begin
             buildpack_uploader.upload_buildpack(buildpack, file, File.basename(file))

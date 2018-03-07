@@ -211,7 +211,7 @@ module VCAP::CloudController
           new_buildpack = VCAP::CloudController::Buildpack.create_from_hash({ name: first_buildpack.name, stack: 'unknown', position: 0 })
           put "/v2/buildpacks/#{new_buildpack.guid}/bits", { buildpack: valid_zip_manifest }
 
-          expect(last_response.status).to eq(409)
+          expect(last_response.status).to eq(422)
         end
 
         it 'allowed when same bits but different filename are uploaded again' do

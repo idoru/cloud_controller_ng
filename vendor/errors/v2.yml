@@ -848,10 +848,15 @@
   http_code: 502
   message: "Service broker returned dashboard client configuration without a dashboard URL"
 
-290001:
+290000:
   name: BuildpackNameStackTaken
-  http_code: 409
+  http_code: 422
   message: "The buildpack name %s is already in use for the stack %s"
+
+290001:
+  name: BuildpackNameTaken
+  http_code: 400
+  message: "The buildpack name is already in use: %s"
 
 290002:
   name: BuildpackBitsUploadInvalid
