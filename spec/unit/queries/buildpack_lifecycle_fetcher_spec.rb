@@ -28,6 +28,17 @@ module VCAP::CloudController
         end
       end
 
+      # context 'when the buildpack exists but not for the requested stack' do
+      #   it '___does something?___' do
+      #     returned_hash = BuildpackLifecycleFetcher.fetch(['buildpack-1'], 'bogus-stack')
+
+      #     expect(returned_hash).to be_empty
+      #     # buildpack_infos = returned_hash[:buildpack_infos]
+      #     # expect(buildpack_infos.map(&:buildpack)).to eq(['bogus-buildpack'])
+      #     # expect(returned_hash[:stack]).to be_nil
+      #   end
+      # end
+
       context 'when the stack and buildpack are not present' do
         it 'returns empty values' do
           returned_hash = BuildpackLifecycleFetcher.fetch([], nil)

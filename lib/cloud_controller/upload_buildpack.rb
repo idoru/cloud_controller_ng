@@ -60,10 +60,11 @@ module VCAP::CloudController
 
     def determine_new_stack(buildpack, bits_file_path)
       extracted_stack = extract_stack_from_buildpack(bits_file_path)
-      if extracted_stack.to_s != '' && !Stack.where(name: extracted_stack).first
+      #TODO: investigate whther we can infer this via model validation and remove this code.
+      if extracted_stack.present? && Stack.where(name: extracted_stack).empty?
         raise CloudController::Errors::ApiError.new_from_details('BuildpackStackDoesNotExist', extracted_stack)
       end
-      new_stack = [extracted_stack, buildpack.stack, Stack.default.name].find { |s| s.to_s != '' && s.to_s != 'unknown' }
+      new_stack = [extracted_stack, buildpack.stack, Stack.default.name].find { |s| s.present? && s.to_s != 'unknown' }
       if buildpack.stack != 'unknown' && buildpack.stack != new_stack
         raise CloudController::Errors::ApiError.new_from_details('BuildpackStacksDontMatch', new_stack, buildpack.stack)
       end
