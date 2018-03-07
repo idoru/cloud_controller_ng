@@ -45,6 +45,33 @@ module VCAP::CloudController
 
       context 'and the upload to the blobstore succeeds' do
         context 'stack from manifest' do
+          context 'manifest file is too large (>1mb)' do
+            let(:valid_zip_manifest_stack) { 'cflinuxfs2' }
+            let(:zip_with_massive_manifest) do
+              zip_name = File.join(tmpdir, filename)
+              TestZip.create(zip_name, 1, 1024) do |zipfile|
+                if valid_zip_manifest_stack
+                  zipfile.get_output_stream('manifest.yml') do |f|
+                    alphachars = [*'A'..'Z']
+                    megabyte_string = (0...(1024*1024)).map { alphachars.sample }.join
+                    f.write("---\nstack: cflinuxfs2\nabsurdly_long_value: " + megabyte_string)
+                  end
+                end
+              end
+              zip_file = File.new(zip_name)
+              Rack::Test::UploadedFile.new(zip_file)
+            end
+
+            it 'returns an error and does not update stack' do
+              expect {
+                upload_buildpack.upload_buildpack(buildpack, zip_with_massive_manifest, filename)
+              }.to raise_error(CloudController::Errors::ApiError, /Buildpack zip error/)
+              bp = Buildpack.find(name: buildpack.name)
+              expect(bp).to_not be_nil
+              expect(bp.stack).to eq('cflinuxfs2')
+            end
+          end
+
           context 'same as buildpack' do
             let(:valid_zip_manifest_stack) { 'cflinuxfs2' }
 
@@ -62,7 +89,9 @@ module VCAP::CloudController
             end
 
             it 'raises an error and does not update stack' do
-              expect { upload_buildpack.upload_buildpack(buildpack, valid_zip, filename) }.to raise_error(CloudController::Errors::ApiError)
+              expect {
+                upload_buildpack.upload_buildpack(buildpack, valid_zip, filename)
+              }.to raise_error(CloudController::Errors::ApiError, /Uploaded buildpack stack \(cflinuxfs3\) does not match cflinuxfs2/)
               bp = Buildpack.find(name: buildpack.name)
               expect(bp).to_not be_nil
               expect(bp.stack).to eq('cflinuxfs2')
@@ -90,15 +119,19 @@ module VCAP::CloudController
 
                 it 'raises an error' do
                   VCAP::CloudController::Buildpack.create(name: buildpack.name, stack: 'cflinuxfs3')
-                  expect { upload_buildpack.upload_buildpack(buildpack, valid_zip, filename) }.to raise_error(CloudController::Errors::ApiError)
+                  expect {
+                    upload_buildpack.upload_buildpack(buildpack, valid_zip, filename)
+                  }.to raise_error(CloudController::Errors::ApiError, /The buildpack name #{buildpack.name} is already in use for the stack #{valid_zip_manifest_stack}/)
                 end
               end
             end
 
-            context 'unknown' do
+            context 'non-existent buildpack' do
               let(:valid_zip_manifest_stack) { 'new-and-unknown' }
               it 'raises an error' do
-                expect { upload_buildpack.upload_buildpack(buildpack, valid_zip, filename) }.to raise_error(CloudController::Errors::ApiError)
+                expect {
+                  upload_buildpack.upload_buildpack(buildpack, valid_zip, filename)
+                }.to raise_error(CloudController::Errors::ApiError, /Uploaded buildpack stack \(#{valid_zip_manifest_stack}\) does not exist/)
                 bp = Buildpack.find(name: buildpack.name)
                 expect(bp).to_not be_nil
                 expect(bp.filename).to be_nil

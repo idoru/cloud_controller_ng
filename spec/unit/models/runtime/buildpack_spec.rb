@@ -11,6 +11,31 @@ module VCAP::CloudController
     describe 'Validations' do
       it { is_expected.to validate_uniqueness [:name, :stack] }
 
+      describe 'stack' do
+        it 'can be changed from unknown' do
+          buildpack = Buildpack.create(name: 'test', stack: 'unknown')
+          buildpack.stack = Stack.make.name
+
+          expect(buildpack).to be_valid
+        end
+
+        it 'cannot be changed once it is known' do
+          buildpack = Buildpack.create(name: 'test', stack: Stack.make.name)
+          buildpack.stack = Stack.make.name
+
+          expect(buildpack).not_to be_valid
+          expect(buildpack.errors.on(:stack)).to include(:buildpack_cant_change_stacks)
+        end
+
+        it 'cannot be changed to a stack that doesn\'t exist' do
+          buildpack = Buildpack.create(name: 'test', stack: 'unknown')
+          buildpack.stack = 'this-stack-isnt-real'
+
+          expect(buildpack).not_to be_valid
+          expect(buildpack.errors.on(:stack)).to include(:buildpack_stack_does_not_exist)
+        end
+      end
+
       describe 'name' do
         it 'does not allow non-word non-dash characters' do
           ['git://github.com', '$abc', 'foobar!'].each do |name|
@@ -92,7 +117,7 @@ module VCAP::CloudController
         end
 
         context 'and there are buildpacks with null keys' do
-          let!(:null_buildpack) { Buildpack.create(name: 'nil_key_custom_buildpack', stack: 'stack', position: 0) }
+          let!(:null_buildpack) { Buildpack.create(name: 'nil_key_custom_buildpack', stack: Stack.make.name, position: 0) }
 
           it 'only returns buildpacks with non-null keys' do
             expect(Buildpack.all).to include(null_buildpack)
@@ -102,7 +127,7 @@ module VCAP::CloudController
         end
 
         context 'and there are buildpacks with empty keys' do
-          let!(:empty_buildpack) { Buildpack.create(name: 'nil_key_custom_buildpack', stack: 'stack', key: '', position: 0) }
+          let!(:empty_buildpack) { Buildpack.create(name: 'nil_key_custom_buildpack', stack: Stack.make.name, key: '', position: 0) }
 
           it 'only returns buildpacks with non-null keys' do
             expect(Buildpack.all).to include(empty_buildpack)
@@ -137,7 +162,7 @@ module VCAP::CloudController
 
     describe '#update' do
       let!(:buildpacks) do
-        Array.new(4) { |i| Buildpack.create(name: "name_#{100 - i}", stack: 'stack', position: i + 1) }
+        Array.new(4) { |i| Buildpack.create(name: "name_#{100 - i}", stack: Stack.make.name, position: i + 1) }
       end
 
       it 'does not modify the frozen hash provided by Sequel' do
@@ -148,8 +173,8 @@ module VCAP::CloudController
     end
 
     describe '#destroy' do
-      let!(:buildpack1) { VCAP::CloudController::Buildpack.create({ name: 'first_buildpack', stack: 'stack', key: 'xyz', position: 1 }) }
-      let!(:buildpack2) { VCAP::CloudController::Buildpack.create({ name: 'second_buildpack', stack: 'stack', key: 'xyz', position: 2 }) }
+      let!(:buildpack1) { VCAP::CloudController::Buildpack.create({ name: 'first_buildpack', stack: Stack.make.name, key: 'xyz', position: 1 }) }
+      let!(:buildpack2) { VCAP::CloudController::Buildpack.create({ name: 'second_buildpack', stack: Stack.make.name, key: 'xyz', position: 2 }) }
 
       it 'removes the specified buildpack' do
         expect {

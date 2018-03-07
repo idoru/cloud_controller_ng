@@ -396,7 +396,7 @@ module VCAP::CloudController
 
   Buildpack.blueprint do
     name { Sham.name }
-    stack { Sham.stack }
+    stack { Stack.make.name }
     key { Sham.guid }
     position { 0 }
     enabled { true }

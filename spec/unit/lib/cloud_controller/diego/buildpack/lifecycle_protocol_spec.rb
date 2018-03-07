@@ -41,6 +41,7 @@ module VCAP
           end
 
           before do
+            Stack.create(name: "potato-stack")
             VCAP::CloudController::Buildpack.create(name: 'ruby', stack: 'potato-stack', key: 'ruby-buildpack-key', position: 2)
             allow(blobstore_url_generator).to receive(:admin_buildpack_download_url).and_return('bp-download-url')
           end

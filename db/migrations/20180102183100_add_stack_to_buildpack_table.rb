@@ -8,23 +8,17 @@ end
 Sequel.migration do
   up do
     alter_table(:buildpacks) do
-      add_column :stack, String, size: 255, null: true
+      add_column :stack, String, size: 255, default: default_stack || 'unknown', null: false
       drop_index :name, unique: true
       add_index [:name, :stack], unique: true, name: :unique_name_and_stack
-    end
-
-    self['UPDATE buildpacks SET stack = ?', default_stack || 'unknown'].update
-
-    alter_table(:buildpacks) do
-      set_column_not_null :stack
     end
   end
 
   down do
     alter_table(:buildpacks) do
-      drop_index [:name, :stack], unique: true
+      drop_index [:name, :stack], unique: true, name: :unique_name_and_stack
       drop_column :stack
-      add_index :name, unique: true, name: :unique_name
+      add_index :name, unique: true, name: :buildpacks_name_index
     end
   end
 end

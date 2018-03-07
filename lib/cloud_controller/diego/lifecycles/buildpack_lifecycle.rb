@@ -58,7 +58,7 @@ module VCAP::CloudController
     end
 
     def buildpack_stack
-      stacks = Buildpack.where(name: buildpacks_to_use).select(:stack).uniq
+      stacks = Buildpack.where(name: buildpacks_to_use).select(:stack).map(&:stack).uniq
       if stacks.length == 1
         stacks.first
       end

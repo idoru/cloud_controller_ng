@@ -59,7 +59,7 @@ module VCAP::CloudController
     after { FileUtils.rm_rf(tmpdir) }
 
     context 'Buildpack binaries' do
-      let(:test_buildpack) { VCAP::CloudController::Buildpack.create_from_hash({ name: 'upload_binary_buildpack', stack: 'stack', position: 0 }) }
+      let(:test_buildpack) { VCAP::CloudController::Buildpack.create_from_hash({ name: 'upload_binary_buildpack', stack: 'unknown', position: 0 }) }
 
       before { CloudController::DependencyLocator.instance.register(:upload_handler, UploadHandler.new(TestConfig.config_instance)) }
 
@@ -90,6 +90,8 @@ module VCAP::CloudController
         end
 
         it 'takes a buildpack file and adds it to the custom buildpacks blobstore with the correct key' do
+          test_buildpack.update(stack: 'stack')
+
           allow(CloudController::DependencyLocator.instance.upload_handler).to receive(:uploaded_file).and_return(valid_zip.path)
           buildpack_blobstore = CloudController::DependencyLocator.instance.buildpack_blobstore
           expected_key = "#{test_buildpack.guid}_#{sha_valid_zip}"
@@ -121,8 +123,6 @@ module VCAP::CloudController
         end
 
         it 'returns ERROR (422) if provided stack does not exist' do
-          test_buildpack.update(stack: 'unknown')
-
           put "/v2/buildpacks/#{test_buildpack.guid}/bits", { buildpack: valid_zip_unknown_stack, buildpack_name: valid_zip_unknown_stack.path }
           expect(last_response.status).to eql 422
 
@@ -141,6 +141,7 @@ module VCAP::CloudController
         end
 
         it 'requires an existing stack to be the same as one in the manifest if it exists' do
+          Stack.make(name: 'not-from-manifest')
           test_buildpack.update(stack: 'not-from-manifest')
 
           put "/v2/buildpacks/#{test_buildpack.guid}/bits", { buildpack: valid_zip_manifest, buildpack_name: valid_zip_manifest.path }
@@ -183,6 +184,8 @@ module VCAP::CloudController
         end
 
         it 'removes the old buildpack binary when a new one is uploaded' do
+          test_buildpack.update(stack: 'stack')
+
           put "/v2/buildpacks/#{test_buildpack.guid}/bits", { buildpack: valid_zip2 }
 
           expected_sha = "#{test_buildpack.guid}_#{sha_valid_zip2}"
@@ -211,7 +214,7 @@ module VCAP::CloudController
           new_buildpack = VCAP::CloudController::Buildpack.create_from_hash({ name: first_buildpack.name, stack: 'unknown', position: 0 })
           put "/v2/buildpacks/#{new_buildpack.guid}/bits", { buildpack: valid_zip_manifest }
 
-          expect(last_response.status).to eq(409)
+          expect(last_response.status).to eq(422)
         end
 
         it 'allowed when same bits but different filename are uploaded again' do
@@ -278,7 +281,7 @@ module VCAP::CloudController
 
         before do
           TestConfig.override(staging_config)
-          VCAP::CloudController::Buildpack.create_from_hash({ name: 'get_binary_buildpack', stack: 'stack', key: 'xyz', position: 0 })
+          VCAP::CloudController::Buildpack.create_from_hash({ name: 'get_binary_buildpack', stack: 'unknown', key: 'xyz', position: 0 })
         end
 
         it 'returns NOT AUTHENTICATED (401) users without correct basic auth' do

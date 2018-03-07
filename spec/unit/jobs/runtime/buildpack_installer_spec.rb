@@ -49,6 +49,8 @@ module VCAP::CloudController
             end
 
             it 'does nothing if multiple buildpacks with same name' do
+              Stack.make(name: 'stack-1')
+              Stack.make(name: 'stack-2')
               Buildpack.make(name: buildpack_name, stack: 'stack-1', filename: nil)
               Buildpack.make(name: buildpack_name, stack: 'stack-2', filename: nil)
 
@@ -108,6 +110,8 @@ module VCAP::CloudController
             end
 
             it 'creates a new buildpack if existing buildpacks have different stacks' do
+              Stack.make(name: 'stack-1')
+              Stack.make(name: 'stack-2')
               Buildpack.make(name: buildpack_name, stack: 'stack-1', filename: nil)
               Buildpack.make(name: buildpack_name, stack: 'stack-2', filename: nil)
 

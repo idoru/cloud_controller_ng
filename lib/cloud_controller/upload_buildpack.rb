@@ -1,8 +1,10 @@
 require 'vcap/digester'
 
 module VCAP::CloudController
+
   class UploadBuildpack
     attr_reader :buildpack_blobstore
+    ONE_MEGABYTE = 1024*1024
 
     def initialize(blobstore)
       @buildpack_blobstore = blobstore
@@ -30,14 +32,23 @@ module VCAP::CloudController
         Buildpack.db.transaction do
           buildpack.lock!
           old_buildpack_key = buildpack.key
-          buildpack.update(
+          success = buildpack.update(
             key: new_key,
             filename: new_filename,
             sha256_checksum: sha256,
-            stack: new_stack,
-          )
+            stack: new_stack)
         end
-      rescue Sequel::Error
+      rescue Sequel::ValidationFailed
+        if buildpack.errors.on([:name, :stack]).try(:include?, :unique)
+          raise CloudController::Errors::ApiError.new_from_details('BuildpackNameStackTaken', buildpack.name, new_stack)
+        end
+        if buildpack.errors.on(:stack).try(:include?, :buildpack_cant_change_stacks)
+          raise CloudController::Errors::ApiError.new_from_details('BuildpackStacksDontMatch', new_stack, buildpack.initial_value(:stack))
+        end
+        if buildpack.errors.on(:stack).try(:include?, :buildpack_stack_does_not_exist)
+          raise CloudController::Errors::ApiError.new_from_details('BuildpackStackDoesNotExist', new_stack)
+        end
+      rescue Sequel::Error => e
         BuildpackBitsDelete.delete_when_safe(new_key, 0)
         return false
       end
@@ -50,29 +61,15 @@ module VCAP::CloudController
       true
     end
 
-    def extract_stack_from_buildpack(bits_file_path)
-      bits_file_path = bits_file_path.path if bits_file_path.respond_to?(:path)
-      output, _, status = Open3.capture3('unzip', '-p', bits_file_path, 'manifest.yml')
-      YAML.safe_load(output).dig('stack') if status.success?
-    end
-
     private
 
     def determine_new_stack(buildpack, bits_file_path)
-      extracted_stack = extract_stack_from_buildpack(bits_file_path)
-      if extracted_stack.to_s != '' && !Stack.where(name: extracted_stack).first
-        raise CloudController::Errors::ApiError.new_from_details('BuildpackStackDoesNotExist', extracted_stack)
-      end
-      new_stack = [extracted_stack, buildpack.stack, Stack.default.name].find { |s| s.to_s != '' && s.to_s != 'unknown' }
-      if buildpack.stack != 'unknown' && buildpack.stack != new_stack
-        raise CloudController::Errors::ApiError.new_from_details('BuildpackStacksDontMatch', new_stack, buildpack.stack)
-      end
-
-      if buildpack.stack != new_stack && Buildpack.find(name: buildpack.name, stack: new_stack)
-        raise CloudController::Errors::ApiError.new_from_details('BuildpackNameStackTaken', buildpack.name, new_stack)
-      end
+      extracted_stack = Buildpacks::StackNameExtractor.extract_from_file(bits_file_path)
+      new_stack = [extracted_stack, buildpack.stack, Stack.default.name].find { |s| s.present? && s.to_s != 'unknown' }
 
       new_stack
+    rescue CloudController::Errors::BuildpackError => e
+      raise CloudController::Errors::ApiError.new_from_details('BuildpackZipError', e.message)
     end
 
     def new_bits?(buildpack, key)
