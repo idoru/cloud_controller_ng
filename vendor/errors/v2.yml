@@ -1153,3 +1153,8 @@
   name: BuildpackStackDoesNotExist
   http_code: 422
   message: 'Uploaded buildpack stack (%s) does not exist'
+
+390013:
+  name: BuildpackManifestTooLarge
+  http_code: 422
+  message: 'Uploaded buildpack manifest larger than 1MB'

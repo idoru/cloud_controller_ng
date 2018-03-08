@@ -1,8 +1,10 @@
 require 'vcap/digester'
 
 module VCAP::CloudController
+
   class UploadBuildpack
     attr_reader :buildpack_blobstore
+    ONE_MEGABYTE = 1024*1024
 
     def initialize(blobstore)
       @buildpack_blobstore = blobstore
@@ -52,8 +54,15 @@ module VCAP::CloudController
 
     def extract_stack_from_buildpack(bits_file_path)
       bits_file_path = bits_file_path.path if bits_file_path.respond_to?(:path)
-      output, _, status = Open3.capture3('unzip', '-p', bits_file_path, 'manifest.yml')
-      YAML.safe_load(output).dig('stack') if status.success?
+      Zip::File.open(bits_file_path) do |zip_file|
+        zip_file.each do |entry|
+          if entry.name == 'manifest.yml'
+            raise CloudController::Errors::ApiError.new_from_details('BuildpackManifestTooLarge') if entry.size > ONE_MEGABYTE
+            return YAML.safe_load(entry.get_input_stream.read).dig('stack')
+          end
+        end
+      end
+      nil
     end
 
     private
