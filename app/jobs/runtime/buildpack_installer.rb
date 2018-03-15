@@ -65,7 +65,7 @@ module VCAP::CloudController
         private
 
         def find_existing_buildpacks
-          stack = buildpack_uploader.extract_stack_from_buildpack(file)
+          stack = VCAP::CloudController::Buildpacks::StackNameExtractor.extract_from_file(file)
           return Buildpack.where(name: name, stack: stack) if stack.present?
 
           Buildpack.where(name: name)

@@ -1155,6 +1155,6 @@
   message: 'Uploaded buildpack stack (%s) does not exist'
 
 390013:
-  name: BuildpackManifestTooLarge
+  name: BuildpackZipError
   http_code: 422
-  message: 'Uploaded buildpack manifest larger than 1MB'
+  message: 'Buildpack zip error: %s'

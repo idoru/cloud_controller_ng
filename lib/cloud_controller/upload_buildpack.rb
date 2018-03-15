@@ -52,23 +52,10 @@ module VCAP::CloudController
       true
     end
 
-    def extract_stack_from_buildpack(bits_file_path)
-      bits_file_path = bits_file_path.path if bits_file_path.respond_to?(:path)
-      Zip::File.open(bits_file_path) do |zip_file|
-        zip_file.each do |entry|
-          if entry.name == 'manifest.yml'
-            raise CloudController::Errors::ApiError.new_from_details('BuildpackManifestTooLarge') if entry.size > ONE_MEGABYTE
-            return YAML.safe_load(entry.get_input_stream.read).dig('stack')
-          end
-        end
-      end
-      nil
-    end
-
     private
 
     def determine_new_stack(buildpack, bits_file_path)
-      extracted_stack = extract_stack_from_buildpack(bits_file_path)
+      extracted_stack = Buildpacks::StackNameExtractor.extract_from_file(bits_file_path)
       #TODO: investigate whther we can infer this via model validation and remove this code.
       if extracted_stack.present? && Stack.where(name: extracted_stack).empty?
         raise CloudController::Errors::ApiError.new_from_details('BuildpackStackDoesNotExist', extracted_stack)
@@ -83,6 +70,8 @@ module VCAP::CloudController
       end
 
       new_stack
+    rescue CloudController::Errors::BuildpackError => e
+      raise CloudController::Errors::ApiError.new_from_details('BuildpackZipError', e.message)
     end
 
     def new_bits?(buildpack, key)
