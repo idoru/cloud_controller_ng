@@ -20,7 +20,7 @@ module VCAP::CloudController
             buildpacks_lock = Locking[name: 'buildpacks']
             buildpacks_lock.db.transaction do
               buildpacks_lock.lock!
-              buildpack = Buildpack.create(name: name, stack: 'unknown')
+              buildpack = Buildpack.create(name: name)
             end
             created = true
           elsif buildpacks.count > 1

@@ -12,14 +12,14 @@ module VCAP::CloudController
       it { is_expected.to validate_uniqueness [:name, :stack] }
 
       describe 'stack' do
-        it 'can be changed from unknown' do
-          buildpack = Buildpack.create(name: 'test', stack: 'unknown')
+        it 'can be changed if not set' do
+          buildpack = Buildpack.create(name: 'test', stack: nil)
           buildpack.stack = Stack.make.name
 
           expect(buildpack).to be_valid
         end
 
-        it 'cannot be changed once it is known' do
+        it 'cannot be changed once it is set' do
           buildpack = Buildpack.create(name: 'test', stack: Stack.make.name)
           buildpack.stack = Stack.make.name
 
@@ -28,7 +28,7 @@ module VCAP::CloudController
         end
 
         it 'cannot be changed to a stack that doesn\'t exist' do
-          buildpack = Buildpack.create(name: 'test', stack: 'unknown')
+          buildpack = Buildpack.create(name: 'test', stack: nil)
           buildpack.stack = 'this-stack-isnt-real'
 
           expect(buildpack).not_to be_valid
@@ -39,7 +39,7 @@ module VCAP::CloudController
       describe 'name' do
         it 'does not allow non-word non-dash characters' do
           ['git://github.com', '$abc', 'foobar!'].each do |name|
-            buildpack = Buildpack.new(name: name, stack: 'unknown')
+            buildpack = Buildpack.new(name: name)
             expect(buildpack).not_to be_valid
             expect(buildpack.errors.on(:name)).to be_present
           end
@@ -47,7 +47,7 @@ module VCAP::CloudController
 
         it 'allows word and dash characters' do
           ['name', 'name-with-dash', '-name-'].each do |name|
-            buildpack = Buildpack.new(name: name, stack: 'unknown')
+            buildpack = Buildpack.new(name: name)
             expect(buildpack).to be_valid
           end
         end

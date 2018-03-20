@@ -8,7 +8,7 @@ end
 Sequel.migration do
   up do
     alter_table(:buildpacks) do
-      add_column :stack, String, size: 255, default: default_stack || 'unknown', null: false
+      add_column :stack, String, size: 255, default: default_stack, null: true
       drop_index :name, unique: true
       add_index [:name, :stack], unique: true, name: :unique_name_and_stack
     end

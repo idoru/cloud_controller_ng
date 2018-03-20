@@ -65,7 +65,7 @@ module VCAP::CloudController
 
     def determine_new_stack(buildpack, bits_file_path)
       extracted_stack = Buildpacks::StackNameExtractor.extract_from_file(bits_file_path)
-      new_stack = [extracted_stack, buildpack.stack, Stack.default.name].find { |s| s.present? && s.to_s != 'unknown' }
+      new_stack = [extracted_stack, buildpack.stack, Stack.default.name].find { |s| s.present? }
 
       new_stack
     rescue CloudController::Errors::BuildpackError => e

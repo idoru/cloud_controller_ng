@@ -30,7 +30,7 @@ RSpec.describe 'Adding multiple stack support to buildpack model', isolation: :t
   context 'STACKS_YML not set' do
     it 'assigns the default stack to existing buildpacks' do
       Sequel::Migrator.run(VCAP::CloudController::Buildpack.db, migrations_dir, target: 20180102183100)
-      expect(VCAP::CloudController::Buildpack.where(name: 'a-great-buildpack-really', stack: "unknown").count).to eq(1)
+      expect(VCAP::CloudController::Buildpack.where(name: 'a-great-buildpack-really', stack: nil).count).to eq(1)
     end
   end
 end

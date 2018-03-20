@@ -99,7 +99,7 @@ module VCAP::CloudController
           end
 
           context 'stack previously unknown' do
-            let!(:buildpack) { VCAP::CloudController::Buildpack.create_from_hash({ name: 'upload_binary_buildpack', stack: 'unknown', position: 0 }) }
+            let!(:buildpack) { VCAP::CloudController::Buildpack.create_from_hash({ name: 'upload_binary_buildpack', stack: nil, position: 0 }) }
             context 'known' do
               let(:valid_zip_manifest_stack) { 'cflinuxfs3' }
               before do
@@ -111,7 +111,7 @@ module VCAP::CloudController
 
                 expect do
                   upload_buildpack.upload_buildpack(buildpack, valid_zip, filename)
-                end.to change { buildpack.stack }.from('unknown').to('cflinuxfs3')
+                end.to change { buildpack.stack }.from(nil).to('cflinuxfs3')
               end
 
               context 'buildpack with same name and stack exists' do

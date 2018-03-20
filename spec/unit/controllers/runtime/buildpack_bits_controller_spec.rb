@@ -59,7 +59,7 @@ module VCAP::CloudController
     after { FileUtils.rm_rf(tmpdir) }
 
     context 'Buildpack binaries' do
-      let(:test_buildpack) { VCAP::CloudController::Buildpack.create_from_hash({ name: 'upload_binary_buildpack', stack: 'unknown', position: 0 }) }
+      let(:test_buildpack) { VCAP::CloudController::Buildpack.create_from_hash({ name: 'upload_binary_buildpack', stack: nil, position: 0 }) }
 
       before { CloudController::DependencyLocator.instance.register(:upload_handler, UploadHandler.new(TestConfig.config_instance)) }
 
@@ -113,8 +113,6 @@ module VCAP::CloudController
         end
 
         it 'sets the buildpack stack if it is unset and in buildpack manifest' do
-          test_buildpack.update(stack: 'unknown')
-
           put "/v2/buildpacks/#{test_buildpack.guid}/bits", { buildpack: valid_zip_manifest, buildpack_name: valid_zip_manifest.path }
           expect(last_response.status).to eql 201
 
@@ -127,12 +125,10 @@ module VCAP::CloudController
           expect(last_response.status).to eql 422
 
           buildpack = Buildpack.find(name: 'upload_binary_buildpack')
-          expect(buildpack.stack).to eq('unknown')
+          expect(buildpack.stack).to be_nil
         end
 
         it 'sets the buildpack stack to default if it is unset and NOT in buildpack manifest' do
-          test_buildpack.update(stack: 'unknown')
-
           put "/v2/buildpacks/#{test_buildpack.guid}/bits", { buildpack: valid_zip, buildpack_name: valid_zip.path }
           expect(last_response.status).to eql 201
 
@@ -195,7 +191,7 @@ module VCAP::CloudController
           put "/v2/buildpacks/#{test_buildpack.guid}/bits", upload_body
           response = MultiJson.load(last_response.body)
           expect(response['entity']['name']).to eq('upload_binary_buildpack')
-          expect(response['entity']['filename']).to eq("#{filename} (stack)")
+          expect(response['entity']['filename']).to eq("#{filename}")
           expect(buildpack_blobstore.exists?(expected_sha)).to be false
         end
 
@@ -206,12 +202,12 @@ module VCAP::CloudController
         end
 
         it 'does not allow uploading a buildpack which will update the stack that already has a buildpack with the same name' do
-          first_buildpack = VCAP::CloudController::Buildpack.create_from_hash({ name: 'nice_buildpack', stack: 'unknown', position: 0 })
+          first_buildpack = VCAP::CloudController::Buildpack.create_from_hash({ name: 'nice_buildpack', stack: nil, position: 0 })
           put "/v2/buildpacks/#{first_buildpack.guid}/bits", { buildpack: valid_zip_manifest }
 
           expect(Buildpack.find(name: 'nice_buildpack').stack).to eq('stack-from-manifest')
 
-          new_buildpack = VCAP::CloudController::Buildpack.create_from_hash({ name: first_buildpack.name, stack: 'unknown', position: 0 })
+          new_buildpack = VCAP::CloudController::Buildpack.create_from_hash({ name: first_buildpack.name, stack: nil, position: 0 })
           put "/v2/buildpacks/#{new_buildpack.guid}/bits", { buildpack: valid_zip_manifest }
 
           expect(last_response.status).to eq(422)
@@ -281,7 +277,7 @@ module VCAP::CloudController
 
         before do
           TestConfig.override(staging_config)
-          VCAP::CloudController::Buildpack.create_from_hash({ name: 'get_binary_buildpack', stack: 'unknown', key: 'xyz', position: 0 })
+          VCAP::CloudController::Buildpack.create_from_hash({ name: 'get_binary_buildpack', stack: nil, key: 'xyz', position: 0 })
         end
 
         it 'returns NOT AUTHENTICATED (401) users without correct basic auth' do

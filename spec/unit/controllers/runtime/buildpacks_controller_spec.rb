@@ -20,7 +20,7 @@ module VCAP::CloudController
       it do
         expect(VCAP::CloudController::BuildpacksController).to have_creatable_attributes({
           name:     { type: 'string', required: true },
-          stack:    { type: 'string', default: 'unknown' },
+          stack:    { type: 'string'},
           position: { type: 'integer', default: 0 },
           enabled:  { type: 'bool', default: true },
           locked:   { type: 'bool', default: false }
@@ -68,7 +68,7 @@ module VCAP::CloudController
           expect(last_response.status).to eq(201)
         end.to change { Buildpack.count }.from(0).to(1)
         buildpack = Buildpack.first
-        expect(buildpack.stack).to eq('unknown')
+        expect(buildpack.stack).to be_nil
       end
 
       it 'uses specified stack' do

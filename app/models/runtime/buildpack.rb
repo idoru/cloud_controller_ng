@@ -20,7 +20,6 @@ module VCAP::CloudController
     end
 
     def validate
-      validates_presence :stack
       validates_unique [:name, :stack]
       validates_format(/\A(\w|\-)+\z/, :name, message: 'name can only contain alphanumeric characters')
 
@@ -52,12 +51,12 @@ module VCAP::CloudController
 
     private
     def validate_stack_change
-      return if [ 'unknown', nil ].include? initial_value(:stack)
+      return if initial_value(:stack).nil?
       errors.add(:stack, :buildpack_cant_change_stacks) if column_changes.key?(:stack)
     end
 
     def validate_stack_existence
-      return if stack == 'unknown'
+      return unless stack
       errors.add(:stack, :buildpack_stack_does_not_exist) if Stack.where(name: stack).empty?
     end
   end
