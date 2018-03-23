@@ -1,14 +1,9 @@
 require 'yaml'
 
-def default_stack
-  stacks_yml_path = ENV.fetch('STACKS_YML', nil)
-  YAML.safe_load(File.read(stacks_yml_path))['default'] if stacks_yml_path && File.exist?(stacks_yml_path)
-end
-
 Sequel.migration do
   up do
     alter_table(:buildpacks) do
-      add_column :stack, String, size: 255, default: default_stack, null: true
+      add_column :stack, String, size: 255, null: true
       drop_index :name, unique: true
       add_index [:name, :stack], unique: true, name: :unique_name_and_stack
     end

@@ -109,6 +109,20 @@ module VCAP::CloudController
               expect(buildpack2.key).to_not eql(buildpack1.key)
             end
 
+            it 'updates an existing buildpack with nil stack' do
+              buildpack1 = Buildpack.make(name: buildpack_name, stack: nil, key: 'new_key')
+
+              update_job = BuildpackInstaller.new(buildpack_name, zipfile, { enabled: false })
+              update_job.perform
+
+              buildpack2 = Buildpack.find(name: buildpack_name)
+              expect(buildpack2).to_not be_nil
+              expect(buildpack2.enabled).to be false
+              expect(buildpack2.filename).to end_with(File.basename(zipfile))
+              expect(buildpack2.key).to_not eql(buildpack1.key)
+              expect(buildpack2.stack).to eql('manifest-stack')
+            end
+
             it 'creates a new buildpack if existing buildpacks have different stacks' do
               Stack.make(name: 'stack-1')
               Stack.make(name: 'stack-2')
