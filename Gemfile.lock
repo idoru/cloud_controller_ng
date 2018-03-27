@@ -1,4 +1,11 @@
 GIT
+  remote: git@github.com:astrieanna/zipruby.git
+  revision: f885a8523f758d6c1f01fd2a6b36f2d432b67f52
+  branch: master
+  specs:
+    zipruby (0.3.8)
+
+GIT
   remote: https://github.com/cloudfoundry-incubator/perm-rb.git
   revision: cc623e9368b6eaf132f6559fb4903bdf281bdba0
   branch: master
@@ -503,6 +510,7 @@ DEPENDENCIES
   vmstat (~> 2.0)
   webmock (> 2.3.1)
   yajl-ruby
+  zipruby!
 
 BUNDLED WITH
    1.16.1
