@@ -62,7 +62,7 @@ module VCAP::CloudController
         expect(buildpack.position).to eq(1)
       end
 
-      it 'defaults stack to unknown when nil' do
+      it 'defaults stack to nil' do
         expect do
           post '/v2/buildpacks', MultiJson.dump({ name: 'a_buildpack', position: 1 })
           expect(last_response.status).to eq(201)
