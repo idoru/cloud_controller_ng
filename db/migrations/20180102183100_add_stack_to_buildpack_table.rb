@@ -12,7 +12,7 @@ Sequel.migration do
       drop_index :name, unique: true
       add_index [:name, :stack], unique: true, name: :unique_name_and_stack
     end
-    DB[:buildpacks].update(:stack => default_stack) if default_stack
+    self[:buildpacks].update(:stack => default_stack) if default_stack
   end
 
   down do
