@@ -15,22 +15,22 @@ module VCAP::CloudController
           logger.info "Installing buildpack #{name}"
 
           buildpacks = find_existing_buildpacks
-          buildpack = nil
-          if buildpacks.empty?
+          if buildpacks.count > 1
+            logger.error "Update failed: Unable to determine buildpack to update as there are multiple buildpacks named #{name} for different stacks."
+            return
+          end
+
+          buildpack = buildpacks.first
+          if buildpack.nil?
             buildpacks_lock = Locking[name: 'buildpacks']
             buildpacks_lock.db.transaction do
               buildpacks_lock.lock!
               buildpack = Buildpack.create(name: name)
             end
             created = true
-          elsif buildpacks.count > 1
-            logger.error "Update failed: Unable to determine buildpack to update as there are multiple buildpacks named #{name} for different stacks."
-            return
-          elsif buildpacks.first.locked
+          elsif buildpack.locked
             logger.info "Buildpack #{name} locked, not updated"
             return
-          else
-            buildpack = buildpacks.first
           end
 
           begin
