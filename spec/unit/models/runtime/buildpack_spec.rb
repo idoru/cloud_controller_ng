@@ -151,6 +151,29 @@ module VCAP::CloudController
           expect(all_buildpacks).to match_array([enabled_buildpack, disabled_buildpack])
         end
       end
+
+      context 'with a stack' do
+        subject(:all_buildpacks) { Buildpack.list_admin_buildpacks('stack1') }
+        let!(:stack1) {Stack.make(name: 'stack1')}
+        let!(:stack2) {Stack.make(name: 'stack2')}
+
+        before do
+          buildpack_blobstore.cp_to_blobstore(buildpack_file_1.path, 'a key')
+          Buildpack.make(key: 'a key', position: 2, stack: 'stack1')
+
+          buildpack_blobstore.cp_to_blobstore(buildpack_file_2.path, 'b key')
+          Buildpack.make(key: 'b key', position: 1, stack: 'stack2')
+
+          buildpack_blobstore.cp_to_blobstore(buildpack_file_3.path, 'c key')
+          @another_buildpack = Buildpack.make(key: 'c key', position: 3, stack: nil)
+        end
+
+        it { is_expected.to have(2).items }
+
+        it 'returns the list in position order, including buildpacks with null stack or matching stacks' do
+          expect(all_buildpacks.collect(&:key)).to eq(['a key', 'c key'])
+        end
+      end
     end
 
     describe 'staging_message' do
