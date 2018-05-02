@@ -103,6 +103,7 @@ module VCAP::CloudController
 
       it 'returns buildpack invalid message correctly' do
         post '/v2/buildpacks', MultiJson.dump({ name: 'invalid_name!', stack: stack.name })
+        #XTEAM: Why change status code and http response code?
         expect(last_response.status).to eq(400)
         expect(decoded_response['code']).to eq(290003)
         expect(Buildpack.count).to eq(0)

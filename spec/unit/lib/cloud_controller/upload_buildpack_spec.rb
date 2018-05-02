@@ -127,6 +127,7 @@ module VCAP::CloudController
             end
 
             context 'non-existent buildpack' do
+              #XTEAM: buildpack seems to exist in test setup, not sure what this test was intending.
               let(:valid_zip_manifest_stack) { 'new-and-unknown' }
               it 'raises an error' do
                 expect {

@@ -6,6 +6,10 @@ module VCAP::CloudController
     import_attributes :name, :stack, :position, :enabled, :locked, :filename, :key
 
     def self.list_admin_buildpacks(stack_name=nil)
+      # XTEAM: This code uses position to prioritize which buildpacks are passed in first
+      # Should we also de-dup by name? i.e. stack_name is ruby.
+      # There are two ruby buildpacks, one with stack_name matching, the other stack_name nil.
+      # During auto-detect, should we only pass in the one matching the stack?
       scoped = exclude(key: nil).exclude(key: '')
       scoped = scoped.filter(Sequel.or([
         [:stack, stack_name],
@@ -54,6 +58,8 @@ module VCAP::CloudController
 
     private
 
+    #XTEAM: This was controversial whether to prohibit users from changing stack once it's set.
+    # PMs said do what is easiest right?
     def validate_stack_change
       return if initial_value(:stack).nil?
       errors.add(:stack, :buildpack_cant_change_stacks) if column_changes.key?(:stack)

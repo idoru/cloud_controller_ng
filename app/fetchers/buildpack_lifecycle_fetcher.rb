@@ -15,14 +15,17 @@ module VCAP::CloudController
       ##       though the buildpack exists). At this point the error returned
       ##       to the user will probably be VERY confusing
 
+      ## XTEAM: Add a separate story to maybe have a helpful error here?
+
       def ordered_buildpacks(buildpack_names, stack_name)
-        buildpacks = Buildpack.where(name: buildpack_names, stack: stack_name).all #[]
-        # Given that some of these buildpacks have nil stack
-        # Return buildpacks that have nil stacks
-        # Except don't return them if they are a duplicate name of a buildpack that has a stack, and matching the stack_name
+        buildpacks = Buildpack.list_admin_buildpacks(stack_name)
 
         buildpack_names.map do |buildpack_name|
-          buildpack_record = buildpacks.find { |b| b.name == buildpack_name }
+          exact_match = buildpacks.find { |b| b.name == buildpack_name && b.stack == stack_name }
+          name_match = buildpacks.find { |b| b.name == buildpack_name }
+
+          buildpack_record = exact_match || name_match
+
           BuildpackInfo.new(buildpack_name, buildpack_record)
         end
       end

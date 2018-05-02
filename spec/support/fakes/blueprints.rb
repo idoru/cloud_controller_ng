@@ -411,6 +411,10 @@ module VCAP::CloudController
     locked { false }
   end
 
+  Buildpack.blueprint(:nil_stack) do
+    stack { nil }
+  end
+
   BuildpackLifecycleDataModel.blueprint do
     buildpacks { nil }
     stack { Stack.make.name }

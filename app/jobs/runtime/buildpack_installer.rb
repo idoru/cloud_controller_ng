@@ -18,6 +18,8 @@ module VCAP::CloudController
           if buildpacks.count > 1
             logger.error "Update failed: Unable to determine buildpack to update as there are multiple buildpacks named #{name} for different stacks."
             return
+            # XTEAM: Is this an error that user should be notified of?
+            # This will fail silently.
           end
 
           buildpack = buildpacks.first
@@ -70,6 +72,7 @@ module VCAP::CloudController
             buildpacks_by_stack = Buildpack.where(name: name, stack: stack)
             return buildpacks_by_stack if buildpacks_by_stack.any?
             return Buildpack.where(name: name, stack: nil)
+            # XTEAM: We were reconsidering whether or not we should overwrite buildpacks of unknown stack during install
           end
 
           Buildpack.where(name: name)

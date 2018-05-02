@@ -36,6 +36,9 @@ module VCAP::CloudController
     end
 
     def staging_stack
+      # XTEAM: This will never use the buildpack_stack because the app_stack is always defined (see default on AppBuildpackLifecycle)
+      # what is intended to be done here?
+
       requested_stack || app_stack || buildpack_stack || VCAP::CloudController::Stack.default.name
     end
 
@@ -59,6 +62,11 @@ module VCAP::CloudController
 
     def buildpack_stack
       stacks = Buildpack.where(name: buildpacks_to_use).select(:stack).map(&:stack).uniq
+      # XTEAM:
+      # This seems like a weird case.
+      # Also what if stack is nil?
+      # Should we add separate story to warn user appropriately if they request
+      # multiple buildpacks from different stacks?
       if stacks.length == 1
         stacks.first
       end

@@ -154,8 +154,8 @@ module VCAP::CloudController
 
       context 'with a stack' do
         subject(:all_buildpacks) { Buildpack.list_admin_buildpacks('stack1') }
-        let!(:stack1) {Stack.make(name: 'stack1')}
-        let!(:stack2) {Stack.make(name: 'stack2')}
+        let!(:stack1) { Stack.make(name: 'stack1') }
+        let!(:stack2) { Stack.make(name: 'stack2') }
 
         before do
           buildpack_blobstore.cp_to_blobstore(buildpack_file_1.path, 'a key')

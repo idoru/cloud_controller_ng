@@ -51,7 +51,7 @@ module VCAP::CloudController
     def buildpack_models
       if self.buildpack_lifecycle_buildpacks.present?
         self.buildpack_lifecycle_buildpacks.map do |buildpack|
-          #TODO: Is this concerning that it just takes the first one it finds?
+          # XTEAM: Is this concerning that it just takes the first one it finds?
           Buildpack.find(name: buildpack.name) || CustomBuildpack.new(buildpack.name)
         end
       else
